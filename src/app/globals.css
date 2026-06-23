@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Atlas Trade Design Tokens */
+  --color-navy-950: #080d1a;
+  --color-navy-900: #0d1526;
+  --color-navy-800: #111d35;
+  --color-navy-700: #172344;
+  --color-navy-600: #1e2d57;
+  --color-slate-500: #3d5080;
+  --color-slate-400: #5a70a0;
+  --color-slate-300: #8a9dc0;
+  --color-slate-200: #c4cfe4;
+  --color-slate-100: #e6eaf4;
+  --color-accent: #3b6fff;
+  --color-accent-hover: #2d5ae0;
+  --color-success: #12b76a;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-purple: #8b5cf6;
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-navy-950);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
 }

@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Store {
+  id             String   @id @default(cuid())
+  name           String   @default("Atlas Cards")
+  vatNumber      String?
+  cashOfferPct   Float    @default(70)
+  creditOfferPct Float    @default(80)
+  allowOverride  Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Trade {
+  id          String      @id @default(cuid())
+  number      Int
+  paymentType PaymentType
+  notes       String?
+  cards       Card[]
+  createdAt   DateTime    @default(now())
+}
+
+model Card {
+  id            String      @id @default(cuid())
+  tradeId       String?
+  trade         Trade?      @relation(fields: [tradeId], references: [id])
+  name          String
+  set           String
+  setNumber     String?
+  rarity        String?
+  condition     Condition   @default(NM)
+  purchasePrice Float
+  marketValue   Float?
+  salePrice     Float?
+  status        CardStatus  @default(IN_STOCK)
+  paymentType   PaymentType?
+  channel       SaleChannel?
+  notes         String?
+  acquiredAt    DateTime    @default(now())
+  soldAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+enum Condition {
+  NM
+  LP
+  MP
+  HP
+}
+
+enum CardStatus {
+  IN_STOCK
+  SOLD
+  RESERVED
+}
+
+enum PaymentType {
+  CASH
+  STORE_CREDIT
+}
+
+enum SaleChannel {
+  IN_STORE
+  EBAY
+  WEBSITE
+  OTHER
+}
+
+model SumupCredential {
+  id           String   @id @default("default")
+  merchantCode String
+  refreshToken String
+  connectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SalesDay {
+  id               String   @id @default(cuid())
+  date             DateTime @unique
+  msSinglesTotal   Float
+  transactionCount Int      @default(0)
+  source           String   @default("SUMUP")
+  syncedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+}
