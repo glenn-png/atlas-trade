@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 
 const dbPath = process.env.DATABASE_PATH ?? path.resolve(process.cwd(), "prisma/dev.db");
+console.log(`[init-db] DATABASE_PATH env: ${process.env.DATABASE_PATH ?? "(not set, using default)"}`)
 
 // Ensure the directory exists (important for /data volume on Railway)
 const dir = path.dirname(dbPath);
