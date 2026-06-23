@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { SettingsClient } from "./SettingsClient";
 import { SumupPanel } from "./SumupPanel";

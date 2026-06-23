@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { TradeInClient } from "./TradeInClient";
 import { prisma } from "@/lib/prisma";
 
