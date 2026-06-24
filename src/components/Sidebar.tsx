@@ -17,19 +17,24 @@ import {
   X,
 } from "lucide-react";
 
+import { Users } from "lucide-react";
+
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/trade-in", label: "Trade-In", icon: ArrowLeftRight },
-  { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/vat", label: "VAT Centre", icon: Receipt },
-  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/trade-in", label: "Trade-In", icon: ArrowLeftRight, adminOnly: false },
+  { href: "/inventory", label: "Inventory", icon: Package, adminOnly: true },
+  { href: "/vat", label: "VAT Centre", icon: Receipt, adminOnly: true },
+  { href: "/reports", label: "Reports", icon: FileText, adminOnly: true },
+  { href: "/admin/users", label: "Users", icon: Users, adminOnly: true },
 ];
 
 function NavContent({
   inventoryCount,
+  role,
   onNavigate,
 }: {
   inventoryCount?: number;
+  role: string;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -40,7 +45,7 @@ function NavContent({
         Atlas <span className="text-accent">Trade</span>
       </div>
 
-      {navItems.map(({ href, label, icon: Icon }) => {
+      {navItems.filter(item => !item.adminOnly || role === "ADMIN").map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href);
         return (
           <Link
@@ -67,19 +72,21 @@ function NavContent({
 
       <div className="flex-1" />
 
-      <Link
-        href="/settings"
-        onClick={onNavigate}
-        className={cn(
-          "flex items-center gap-2.5 px-2.5 py-2.5 rounded-[6px] text-[13px] font-medium transition-all border",
-          usePathname().startsWith("/settings")
-            ? "text-white bg-navy-700 border-white/12"
-            : "text-slate-300 border-transparent hover:text-white hover:bg-navy-800"
-        )}
-      >
-        <Settings size={16} />
-        Settings
-      </Link>
+      {role === "ADMIN" && (
+        <Link
+          href="/settings"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-2.5 rounded-[6px] text-[13px] font-medium transition-all border",
+            usePathname().startsWith("/settings")
+              ? "text-white bg-navy-700 border-white/12"
+              : "text-slate-300 border-transparent hover:text-white hover:bg-navy-800"
+          )}
+        >
+          <Settings size={16} />
+          Settings
+        </Link>
+      )}
 
       <div className="mt-4 pt-4 border-t border-white/7">
         <div className="flex items-center gap-2.5 p-2.5 bg-navy-800 border border-white/7 rounded-[10px]">
@@ -103,14 +110,14 @@ function NavContent({
   );
 }
 
-export function Sidebar({ inventoryCount }: { inventoryCount?: number }) {
+export function Sidebar({ inventoryCount, role = "STAFF" }: { inventoryCount?: number; role?: string }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-[220px] bg-navy-900 border-r border-white/7 flex-col py-5 px-3 gap-1 shrink-0">
-        <NavContent inventoryCount={inventoryCount} />
+        <NavContent inventoryCount={inventoryCount} role={role} />
       </aside>
 
       {/* Mobile top bar */}
@@ -152,7 +159,7 @@ export function Sidebar({ inventoryCount }: { inventoryCount?: number }) {
             <X size={18} />
           </button>
         </div>
-        <NavContent inventoryCount={inventoryCount} onNavigate={() => setOpen(false)} />
+        <NavContent inventoryCount={inventoryCount} role={role} onNavigate={() => setOpen(false)} />
       </aside>
     </>
   );
