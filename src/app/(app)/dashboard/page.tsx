@@ -6,7 +6,7 @@ import { Badge } from "@/components/Badge";
 
 type Period = "daily" | "weekly" | "monthly";
 
-function getPeriodRanges(period: Period): {
+function getPeriodRanges(period: Period, offset: number = 0): {
   label: string;
   current: { from: Date; to: Date };
   previous: { from: Date; to: Date };
@@ -14,42 +14,55 @@ function getPeriodRanges(period: Period): {
   const now = new Date();
 
   if (period === "daily") {
-    const from = new Date(now); from.setHours(0, 0, 0, 0);
-    const to = new Date(now); to.setHours(23, 59, 59, 999);
+    const from = new Date(now);
+    from.setDate(from.getDate() + offset);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(from); to.setHours(23, 59, 59, 999);
     const prevFrom = new Date(from); prevFrom.setDate(prevFrom.getDate() - 1);
-    const prevTo = new Date(to); prevTo.setDate(prevTo.getDate() - 1);
+    const prevTo = new Date(prevFrom); prevTo.setHours(23, 59, 59, 999);
+    const isToday = offset === 0;
     return {
-      label: now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }),
+      label: isToday
+        ? `Today — ${from.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`
+        : from.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
       current: { from, to },
       previous: { from: prevFrom, to: prevTo },
     };
   }
 
   if (period === "weekly") {
-    // Mon–Sun week
     const dow = now.getDay();
     const monday = new Date(now);
-    monday.setDate(now.getDate() - ((dow + 6) % 7));
+    monday.setDate(now.getDate() - ((dow + 6) % 7) + offset * 7);
     monday.setHours(0, 0, 0, 0);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
     const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
     const prevSunday = new Date(sunday); prevSunday.setDate(sunday.getDate() - 7);
+    const isThisWeek = offset === 0;
     return {
-      label: `${monday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${sunday.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`,
+      label: isThisWeek
+        ? `This week — ${monday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${sunday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+        : `${monday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${sunday.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`,
       current: { from: monday, to: sunday },
       previous: { from: prevMonday, to: prevSunday },
     };
   }
 
   // monthly
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-  const prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  const month = now.getMonth() + offset;
+  const year = now.getFullYear() + Math.floor(month / 12);
+  const normMonth = ((month % 12) + 12) % 12;
+  const from = new Date(year, normMonth, 1);
+  const to = new Date(year, normMonth + 1, 0, 23, 59, 59, 999);
+  const prevFrom = new Date(year, normMonth - 1, 1);
+  const prevTo = new Date(year, normMonth, 0, 23, 59, 59, 999);
+  const isThisMonth = offset === 0;
   return {
-    label: now.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+    label: isThisMonth
+      ? `This month — ${from.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`
+      : from.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
     current: { from, to },
     previous: { from: prevFrom, to: prevTo },
   };
@@ -69,14 +82,16 @@ function delta(current: number, previous: number): { value: number; label: strin
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; offset?: string }>;
 }) {
   const params = await searchParams;
   const period: Period = (["daily", "weekly", "monthly"].includes(params.period ?? ""))
     ? (params.period as Period)
     : "daily";
+  const offset = parseInt(params.offset ?? "0") || 0;
+  const clampedOffset = Math.min(0, offset); // prevent navigating into the future
 
-  const { label, current, previous } = getPeriodRanges(period);
+  const { label, current, previous } = getPeriodRanges(period, clampedOffset);
   const now = new Date();
   const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
   const quarterStart = new Date(now.getFullYear(), quarterMonth, 1);
@@ -170,21 +185,45 @@ export default async function DashboardPage({
           <div className="text-[13px] text-slate-400">{label}</div>
         </div>
 
-        {/* Period tabs */}
-        <div className="flex bg-navy-800 border border-white/7 rounded-[8px] p-0.5 gap-0.5">
-          {tabs.map(({ key, label: tabLabel }) => (
+        <div className="flex items-center gap-2">
+          {/* Prev / Next navigation */}
+          <a
+            href={`?period=${period}&offset=${clampedOffset - 1}`}
+            className="w-8 h-8 flex items-center justify-center rounded-[6px] bg-navy-800 border border-white/7 text-slate-400 hover:text-white hover:border-white/20 transition-colors text-[14px]"
+            title="Previous period"
+          >‹</a>
+          {clampedOffset < 0 && (
             <a
-              key={key}
-              href={`?period=${key}`}
-              className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
-                period === key
-                  ? "bg-navy-600 text-white border border-white/12"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              href={`?period=${period}&offset=0`}
+              className="px-2.5 py-1 rounded-[6px] bg-navy-800 border border-white/7 text-slate-400 hover:text-white text-[11px] font-semibold transition-colors"
             >
-              {tabLabel}
+              Today
             </a>
-          ))}
+          )}
+          {clampedOffset < 0 && (
+            <a
+              href={`?period=${period}&offset=${clampedOffset + 1}`}
+              className="w-8 h-8 flex items-center justify-center rounded-[6px] bg-navy-800 border border-white/7 text-slate-400 hover:text-white hover:border-white/20 transition-colors text-[14px]"
+              title="Next period"
+            >›</a>
+          )}
+
+          {/* Period tabs */}
+          <div className="flex bg-navy-800 border border-white/7 rounded-[8px] p-0.5 gap-0.5">
+            {tabs.map(({ key, label: tabLabel }) => (
+              <a
+                key={key}
+                href={`?period=${key}&offset=0`}
+                className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
+                  period === key
+                    ? "bg-navy-600 text-white border border-white/12"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {tabLabel}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
 

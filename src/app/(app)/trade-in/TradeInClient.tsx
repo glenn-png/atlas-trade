@@ -76,8 +76,17 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
     setSession((prev) => prev.map((c) => (c.id === id ? { ...c, marketValue } : c)));
   }
 
+  const [confirmAccept, setConfirmAccept] = useState<{ paymentType: PaymentType; total: number } | null>(null);
+
   function handleAccept(paymentType: PaymentType) {
     const total = paymentType === "CASH" ? totalCash : totalCredit;
+    setConfirmAccept({ paymentType, total });
+  }
+
+  function confirmAndSubmit() {
+    if (!confirmAccept) return;
+    const { paymentType, total } = confirmAccept;
+    setConfirmAccept(null);
     startTransition(async () => {
       const { tradeNumber } = await completeTrade({
         paymentType,
@@ -334,6 +343,45 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
   );
 
   return (
+    <>
+    {confirmAccept && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+        <div className="bg-navy-800 border border-white/10 rounded-[14px] w-full max-w-sm p-6 space-y-4">
+          <div className="text-[16px] font-bold text-white">Confirm trade?</div>
+          <div className="space-y-1.5 text-[13px]">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Cards</span>
+              <span className="text-white font-semibold">{session.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Payment</span>
+              <span className="text-white font-semibold">{confirmAccept.paymentType === "CASH" ? "Cash" : "Store Credit"}</span>
+            </div>
+            <div className="flex justify-between text-[15px] pt-1 border-t border-white/7 mt-2">
+              <span className="text-slate-300 font-semibold">Total</span>
+              <span className="text-white font-bold font-mono">{formatGBP(confirmAccept.total)}</span>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setConfirmAccept(null)}
+              className="flex-1 py-3 rounded-[10px] text-[14px] font-semibold text-slate-300 border border-white/12 hover:text-white hover:border-white/20 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmAndSubmit}
+              disabled={isPending}
+              className={`flex-1 py-3 rounded-[10px] text-[14px] font-bold text-white transition-opacity disabled:opacity-50 ${
+                confirmAccept.paymentType === "CASH" ? "bg-success hover:opacity-90" : "bg-accent hover:opacity-90"
+              }`}
+            >
+              {isPending ? "Processing…" : "Confirm"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="flex flex-col h-full">
       {/* Topbar */}
       <div className="bg-navy-900 border-b border-white/7 px-4 lg:px-6 py-3 flex items-center gap-4 shrink-0">
@@ -465,5 +513,6 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -91,7 +91,7 @@ function ReportCard({
             href={printHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 bg-navy-700 border border-white/12 text-slate-300 text-[12px] font-semibold rounded-[6px] hover:text-white hover:border-white/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-warning/10 border border-warning/25 text-warning text-[12px] font-semibold rounded-[6px] hover:bg-warning/20 transition-colors"
           >
             <Printer size={13} />
             Print / Save PDF
@@ -107,10 +107,13 @@ export function ReportsClient({ defaultFrom, defaultTo }: ReportsClientProps) {
   const [tradesTo, setTradesTo] = useState(defaultTo);
   const [vatFrom, setVatFrom] = useState(defaultFrom);
   const [vatTo, setVatTo] = useState(defaultTo);
+  const [splitFrom, setSplitFrom] = useState(defaultFrom);
+  const [splitTo, setSplitTo] = useState(defaultTo);
   const [inventoryStatus, setInventoryStatus] = useState("IN_STOCK");
 
   const tradesExcel = `/api/reports/trades?from=${tradesFrom}&to=${tradesTo}`;
   const vatExcel = `/api/reports/vat?from=${vatFrom}&to=${vatTo}`;
+  const splitExcel = `/api/reports/payment-split?from=${splitFrom}&to=${splitTo}`;
   const inventoryExcel = `/api/reports/inventory?status=${inventoryStatus}`;
   const valuationExcel = `/api/reports/valuation`;
 
@@ -132,6 +135,20 @@ export function ReportsClient({ defaultFrom, defaultTo }: ReportsClientProps) {
         onToChange={setTradesTo}
         excelHref={tradesExcel}
         printHref={`/api/reports/print/trades?from=${tradesFrom}&to=${tradesTo}`}
+      />
+
+      {/* Cash vs Credit Split */}
+      <ReportCard
+        title="Cash vs Credit Split"
+        description="Breakdown of trades by payment type — how much you paid out in cash vs store credit, and the proportion of each."
+        sheets={["Summary", "All Trades"]}
+        hasDateRange
+        from={splitFrom}
+        to={splitTo}
+        onFromChange={setSplitFrom}
+        onToChange={setSplitTo}
+        excelHref={splitExcel}
+        printHref={`/api/reports/print/payment-split?from=${splitFrom}&to=${splitTo}`}
       />
 
       {/* Inventory */}
@@ -179,7 +196,7 @@ export function ReportsClient({ defaultFrom, defaultTo }: ReportsClientProps) {
             href={`/api/reports/print/inventory?status=${inventoryStatus}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 bg-navy-700 border border-white/12 text-slate-300 text-[12px] font-semibold rounded-[6px] hover:text-white hover:border-white/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-warning/10 border border-warning/25 text-warning text-[12px] font-semibold rounded-[6px] hover:bg-warning/20 transition-colors"
           >
             <Printer size={13} />
             Print / Save PDF
