@@ -10,7 +10,6 @@ export default async function TradeInPage() {
 
   const recentTrades = await prisma.trade.findMany({
     orderBy: { createdAt: "desc" },
-    take: 5,
     include: {
       cards: { select: { purchasePrice: true } },
     },

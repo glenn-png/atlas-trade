@@ -406,8 +406,8 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
             {addCardPanel}
             {recentTrades.length > 0 && session.length === 0 && (
               <div className="mt-8">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Recent trades</div>
-                <div className="space-y-1.5">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Recent trades ({recentTrades.length})</div>
+                <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                   {recentTrades.map((t) => (
                     <a
                       key={t.id}
@@ -438,8 +438,8 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           {addCardPanel}
           {recentTrades.length > 0 && session.length === 0 && (
             <div className="mt-8">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Recent trades</div>
-              <div className="space-y-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Recent trades ({recentTrades.length})</div>
+              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
                 {recentTrades.map((t) => (
                   <a
                     key={t.id}
