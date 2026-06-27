@@ -188,14 +188,14 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
 
         {/* Period stats */}
         <section>
           <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">
             {tabs.find((t) => t.key === period)?.label} Overview
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               label="Trades"
               value={currentTradeCount.toString()}
@@ -228,7 +228,7 @@ export default async function DashboardPage({
           <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">
             {currentQuarter} VAT Estimate
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <StatCard label="Purchases" value={formatGBP(quarterCost)} sub="from trade-ins" />
             <StatCard
               label="Sales (MS-Singles)"
@@ -251,7 +251,7 @@ export default async function DashboardPage({
         {/* Inventory snapshot — always current */}
         <section>
           <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">Inventory Snapshot</div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <StatCard label="Cards In Stock" value={allInStock._count.toString()} />
             <StatCard label="Cost Value" value={formatGBP(inventoryValue)} sub="at purchase price" />
             <StatCard label="Market Value" value={formatGBP(marketValue)} sub="current market" />
@@ -343,10 +343,10 @@ function StatCard({
   delta?: { label: string; positive: boolean } | null;
 }) {
   return (
-    <div className="bg-navy-800 border border-white/7 rounded-[10px] px-5 py-4">
-      <div className="text-[12px] font-medium text-slate-400 mb-2">{label}</div>
+    <div className="bg-navy-800 border border-white/7 rounded-[10px] px-3 py-3 sm:px-5 sm:py-4">
+      <div className="text-[11px] sm:text-[12px] font-medium text-slate-400 mb-1.5 sm:mb-2 leading-tight">{label}</div>
       <div
-        className="text-[24px] font-bold tracking-tight"
+        className="text-[18px] sm:text-[24px] font-bold tracking-tight truncate"
         style={{ color: highlight ? "var(--color-warning)" : "white" }}
       >
         {value}
@@ -363,7 +363,7 @@ function StatCard({
             {d.label}
           </span>
         )}
-        {sub && <span className="text-[12px] text-slate-400">{sub}</span>}
+        {sub && <span className="text-[11px] sm:text-[12px] text-slate-400 leading-snug">{sub}</span>}
       </div>
     </div>
   );
