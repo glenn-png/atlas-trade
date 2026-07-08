@@ -94,6 +94,15 @@ db.exec(`
   );
 `);
 
+// Migrate: add new Card columns if they don't exist yet
+const cardCols = db.pragma("table_info(Card)").map((c) => c.name);
+if (!cardCols.includes("itemType"))
+  db.exec("ALTER TABLE Card ADD COLUMN itemType TEXT NOT NULL DEFAULT 'SINGLE'");
+if (!cardCols.includes("quantity"))
+  db.exec("ALTER TABLE Card ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1");
+if (!cardCols.includes("grade"))
+  db.exec("ALTER TABLE Card ADD COLUMN grade TEXT");
+
 // Seed first admin if no users exist
 const userCount = db.prepare("SELECT COUNT(*) as count FROM User").get();
 if (userCount.count === 0) {

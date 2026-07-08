@@ -50,6 +50,9 @@ model Card {
   set           String
   setNumber     String?
   rarity        String?
+  itemType      String      @default("SINGLE")
+  quantity      Int         @default(1)
+  grade         String?
   condition     Condition   @default(NM)
   purchasePrice Float
   marketValue   Float?
