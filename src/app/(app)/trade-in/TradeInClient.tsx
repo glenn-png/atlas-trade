@@ -32,6 +32,29 @@ const ITEM_TYPES: { value: ItemType; label: string; emoji: string }[] = [
   { value: "BULK", label: "Bulk", emoji: "🗂️" },
 ];
 
+const CONGRATS: { emoji: string; message: string }[] = [
+  { emoji: "⚡", message: "Pikachu used Trade-In! It's super effective!" },
+  { emoji: "🔥", message: "Charizard is fired up — great trade!" },
+  { emoji: "💧", message: "Blastoise gives this trade two thumbs up!" },
+  { emoji: "🌿", message: "Bulbasaur bloomed with joy at this trade!" },
+  { emoji: "🌙", message: "Umbreon approves. You traded in the dark type way." },
+  { emoji: "✨", message: "A wild Clefairy appeared — and it loved this trade!" },
+  { emoji: "🏆", message: "Mewtwo sensed incredible power in this transaction." },
+  { emoji: "🎯", message: "Alakazam calculated it — this was the optimal trade." },
+  { emoji: "🌊", message: "Gyarados is pleased. Do not make it unpleased." },
+  { emoji: "🍃", message: "Snorlax woke up just to say: nice trade, back to sleep." },
+  { emoji: "❄️", message: "Articuno froze time to celebrate this trade!" },
+  { emoji: "🌟", message: "Jolteon sparked with excitement — stellar trade!" },
+  { emoji: "🦋", message: "Butterfree fluttered in to say you absolutely nailed it." },
+  { emoji: "🎵", message: "Jigglypuff sang a victory song just for you!" },
+  { emoji: "👊", message: "Machamp is giving you all four thumbs up!" },
+  { emoji: "🔮", message: "Gengar is grinning — and Gengar only grins at good trades." },
+  { emoji: "🌈", message: "Ho-Oh descended from the heavens to witness this trade." },
+  { emoji: "🐉", message: "Dragonite flew across the world to deliver this congrats!" },
+  { emoji: "🔴", message: "Professor Oak said: Outstanding! A fine trade was made today." },
+  { emoji: "💫", message: "Eevee doesn't know which form to evolve into — this trade was too hype!" },
+];
+
 const emptyForm = {
   itemType: "SINGLE" as ItemType,
   name: "",
@@ -82,7 +105,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
   const [cashPct, setCashPct] = useState(defaultCashPct);
   const [creditPct, setCreditPct] = useState(defaultCreditPct);
   const [isPending, startTransition] = useTransition();
-  const [done, setDone] = useState<{ count: number; total: number; type: PaymentType; tradeNumber: number } | null>(null);
+  const [done, setDone] = useState<{ count: number; total: number; type: PaymentType; tradeNumber: number; congrats: { emoji: string; message: string } } | null>(null);
   const [mobileTab, setMobileTab] = useState<"add" | "session">("add");
   const [confirmAccept, setConfirmAccept] = useState<{ paymentType: PaymentType; total: number } | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -152,7 +175,8 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
         })),
       });
       const total = paymentType === "CASH" ? totalCash : totalCredit;
-      setDone({ count: session.length, total, type: paymentType, tradeNumber });
+      const congrats = CONGRATS[Math.floor(Math.random() * CONGRATS.length)];
+      setDone({ count: session.length, total, type: paymentType, tradeNumber, congrats });
       setSession([]);
     });
   }
@@ -161,9 +185,12 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
     return (
       <div className="flex items-center justify-center h-full px-6">
         <div className="text-center space-y-4 max-w-sm w-full">
-          <div className="text-[48px]">✓</div>
+          <div className="text-[56px]">{done.congrats.emoji}</div>
           <div className="text-[13px] font-semibold text-slate-400 tracking-widest uppercase">Trade #{done.tradeNumber}</div>
           <div className="text-[22px] font-bold text-white">Trade accepted!</div>
+          <div className="bg-accent/10 border border-accent/20 rounded-[12px] px-5 py-4">
+            <div className="text-[15px] text-white font-medium italic">"{done.congrats.message}"</div>
+          </div>
           <div className="text-slate-400 text-[15px]">
             {done.count} item{done.count !== 1 ? "s" : ""} added for{" "}
             <span className="text-white font-semibold">{formatGBP(done.total)}</span>{" "}
