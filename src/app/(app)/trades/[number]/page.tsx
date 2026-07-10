@@ -109,7 +109,7 @@ export default async function TradePage({
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-navy-900">
-                  {["Card", "Condition", "Purchase Price", "Market Value", "Est. Margin", "Status"].map((h) => (
+                  {["Type", "Item", "Condition / Grade", "Purchase Price", "Market Value", "Est. Margin", "Status"].map((h) => (
                     <th
                       key={h}
                       className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap"
@@ -130,8 +130,29 @@ export default async function TradePage({
                       key={card.id}
                       className={`border-b border-white/7 last:border-0 hover:bg-white/[0.02] ${isSold ? "opacity-50" : ""}`}
                     >
+                      <td className="px-3.5 py-3 whitespace-nowrap">
+                        {(() => {
+                          const type = (card as { itemType?: string }).itemType ?? "SINGLE";
+                          const map: Record<string, { label: string; emoji: string; cls: string }> = {
+                            SINGLE:  { label: "Single",  emoji: "🃏", cls: "text-slate-400" },
+                            GRADED:  { label: "Graded",  emoji: "🏆", cls: "text-warning" },
+                            SEALED:  { label: "Sealed",  emoji: "📦", cls: "text-accent" },
+                            BULK:    { label: "Bulk",    emoji: "🗂️", cls: "text-slate-300" },
+                          };
+                          const t = map[type] ?? map.SINGLE;
+                          return (
+                            <span className={`text-[11px] font-semibold ${t.cls}`}>
+                              {t.emoji} {t.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-3.5 py-3">
-                        <div className="font-semibold text-white">{card.name}</div>
+                        <div className="font-semibold text-white">
+                          {(card as { quantity?: number }).quantity && (card as { quantity?: number }).quantity! > 1
+                            ? `${(card as { quantity?: number }).quantity}× ${card.name}`
+                            : card.name}
+                        </div>
                         <div className="text-[11px] text-slate-400">
                           {card.set}
                           {card.setNumber ? ` · #${card.setNumber}` : ""}
@@ -139,17 +160,19 @@ export default async function TradePage({
                         </div>
                       </td>
                       <td className="px-3.5 py-3">
-                        <Badge
-                          variant={
-                            card.condition === "NM"
-                              ? "green"
-                              : card.condition === "LP"
-                              ? "amber"
-                              : "red"
-                          }
-                        >
-                          {card.condition}
-                        </Badge>
+                        {(card as { itemType?: string; grade?: string }).itemType === "GRADED" && (card as { grade?: string }).grade ? (
+                          <span className="text-[12px] font-semibold text-warning">
+                            {(card as { grade?: string }).grade}
+                          </span>
+                        ) : (card as { itemType?: string }).itemType === "SEALED" ? (
+                          <span className="text-slate-500 text-[12px]">—</span>
+                        ) : (
+                          <Badge
+                            variant={card.condition === "NM" ? "green" : card.condition === "LP" ? "amber" : "red"}
+                          >
+                            {card.condition}
+                          </Badge>
+                        )}
                       </td>
                       <td className="px-3.5 py-3 font-mono text-success">
                         {formatGBP(card.purchasePrice)}
