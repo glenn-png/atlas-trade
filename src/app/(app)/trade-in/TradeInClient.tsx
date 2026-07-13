@@ -194,7 +194,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           <div className="text-slate-400 text-[15px]">
             {done.count} item{done.count !== 1 ? "s" : ""} added for{" "}
             <span className="text-white font-semibold">{formatGBP(done.total)}</span>{" "}
-            {done.type === "CASH" ? "cash" : "store credit"}
+            {done.type === "CASH" ? "purchase" : "store credit"}
           </div>
           <button
             onClick={() => { setDone(null); setMobileTab("add"); }}
@@ -261,22 +261,13 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
 
       {/* Single: set number + rarity */}
       {form.itemType === "SINGLE" && (
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="text"
-            value={form.setNumber}
-            onChange={(e) => setForm({ ...form, setNumber: e.target.value })}
-            placeholder="Number  e.g. 215/197"
-            className="w-full bg-navy-800 border border-white/12 rounded-[8px] text-white text-[15px] px-4 py-3 outline-none focus:border-accent placeholder:text-slate-500"
-          />
-          <input
-            type="text"
-            value={form.rarity}
-            onChange={(e) => setForm({ ...form, rarity: e.target.value })}
-            placeholder="Rarity"
-            className="w-full bg-navy-800 border border-white/12 rounded-[8px] text-white text-[15px] px-4 py-3 outline-none focus:border-accent placeholder:text-slate-500"
-          />
-        </div>
+        <input
+          type="text"
+          value={form.setNumber}
+          onChange={(e) => setForm({ ...form, setNumber: e.target.value })}
+          placeholder="Number  e.g. 215/197"
+          className="w-full bg-navy-800 border border-white/12 rounded-[8px] text-white text-[15px] px-4 py-3 outline-none focus:border-accent placeholder:text-slate-500"
+        />
       )}
 
       {/* Graded: grade input */}
@@ -366,7 +357,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
       {marketValue > 0 && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-navy-900 rounded-[8px] px-4 py-3 text-center">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Cash</div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Purchase</div>
             <div className="text-[20px] font-extrabold text-white font-mono">
               {formatGBP(previewCash * (form.itemType === "BULK" || form.itemType === "SEALED" ? quantity : 1))}
             </div>
@@ -490,7 +481,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                     )}
 
                     <div className="flex justify-between mt-1.5 text-[11px]">
-                      <span className="text-slate-500">Cash {formatGBP(cashOffer)}</span>
+                      <span className="text-slate-500">Purchase {formatGBP(cashOffer)}</span>
                       <span className="text-accent">Credit {formatGBP(creditOffer)}</span>
                     </div>
                   </div>
@@ -506,7 +497,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                 <span className="text-white font-mono">{formatGBP(totalMarket)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Cash ({cashPct}%)</span>
+                <span className="text-slate-400">Purchase ({cashPct}%)</span>
                 <span className="text-white font-mono font-semibold">{formatGBP(totalCash)}</span>
               </div>
               <div className="flex justify-between">
@@ -520,7 +511,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                 disabled={isPending}
                 className="w-full bg-success text-white font-bold text-[16px] py-4 rounded-[12px] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                ✓ Accept Cash — {formatGBP(totalCash)}
+                ✓ Accept Purchase — {formatGBP(totalCash)}
               </button>
               <button
                 onClick={() => handleAccept("STORE_CREDIT")}
@@ -556,7 +547,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Payment</span>
-                <span className="text-white font-semibold">{confirmAccept.paymentType === "CASH" ? "Cash" : "Store Credit"}</span>
+                <span className="text-white font-semibold">{confirmAccept.paymentType === "CASH" ? "Purchase" : "Store Credit"}</span>
               </div>
               <div className="flex justify-between text-[15px] pt-1 border-t border-white/7 mt-2">
                 <span className="text-slate-300 font-semibold">Total</span>
@@ -595,7 +586,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           </div>
           {/* Offer % controls */}
           <div className="flex items-center gap-2 text-[12px] text-slate-400">
-            <span className="hidden sm:inline">Cash</span>
+            <span className="hidden sm:inline">Purchase</span>
             <div className="flex items-center gap-1">
               <input
                 type="number"
