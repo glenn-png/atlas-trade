@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       "Trade #": t.number,
       Date: t.createdAt.toLocaleDateString("en-GB"),
       Time: t.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash",
+      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase",
       Cards: t.cards.length,
       "Total Cost (£)": +totalCost.toFixed(2),
       "Total Market Value (£)": totalMarket > 0 ? +totalMarket.toFixed(2) : "",
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       Condition: c.condition,
       "Purchase Price (£)": +c.purchasePrice.toFixed(2),
       "Market Value (£)": c.marketValue ? +c.marketValue.toFixed(2) : "",
-      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash",
+      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase",
       Status: c.status === "IN_STOCK" ? "In Stock" : c.status === "SOLD" ? "Sold" : "Reserved",
     }))
   );

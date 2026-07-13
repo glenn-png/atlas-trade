@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
         .join("");
       return `
         <div class="trade-section">
-          <h3>Trade #${t.number} &mdash; ${t.createdAt.toLocaleDateString("en-GB")} &middot; ${t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash"}</h3>
+          <h3>Trade #${t.number} &mdash; ${t.createdAt.toLocaleDateString("en-GB")} &middot; ${t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase"}</h3>
           <table>
             <thead><tr><th>Card</th><th>Set</th><th>Cond.</th><th class="right">Purchase Price</th><th class="right">Market Value</th></tr></thead>
             <tbody>${cardRows}</tbody>

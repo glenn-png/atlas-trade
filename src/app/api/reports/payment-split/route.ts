@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     return {
       "Trade #": t.number,
       "Date": t.createdAt.toLocaleDateString("en-GB"),
-      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash",
+      "Payment Type": t.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase",
       "Cards": t.cards.length,
       "Total Paid Out (£)": +cost.toFixed(2),
     };

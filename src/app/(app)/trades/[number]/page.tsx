@@ -59,7 +59,7 @@ export default async function TradePage({
           </div>
         </div>
         <Badge variant={trade.paymentType === "STORE_CREDIT" ? "blue" : "slate"}>
-          {trade.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash"}
+          {trade.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase"}
         </Badge>
       </div>
 

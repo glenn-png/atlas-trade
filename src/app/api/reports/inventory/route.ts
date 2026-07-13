@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       "Est. Margin (£)": estimatedMargin,
       "Margin %": marginPct,
       Status: c.status === "IN_STOCK" ? "In Stock" : c.status === "SOLD" ? "Sold" : "Reserved",
-      "Payment Type": c.paymentType === "STORE_CREDIT" ? "Store Credit" : c.paymentType === "CASH" ? "Cash" : "",
+      "Payment Type": c.paymentType === "STORE_CREDIT" ? "Store Credit" : c.paymentType === "CASH" ? "Purchase" : "",
       "Acquired Date": c.acquiredAt.toLocaleDateString("en-GB"),
     };
   });

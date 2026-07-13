@@ -689,7 +689,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                       </div>
                       <div className="flex items-center gap-2 text-slate-400">
                         <span className="font-mono text-white">{formatGBP(t.total)}</span>
-                        <span>{t.paymentType === "STORE_CREDIT" ? "credit" : "cash"}</span>
+                        <span>{t.paymentType === "STORE_CREDIT" ? "credit" : "purchase"}</span>
                       </div>
                     </a>
                   ))}

@@ -345,7 +345,7 @@ export default async function DashboardPage({
                         <td className="px-3.5 py-3 font-mono text-success">{formatGBP(tradeCost)}</td>
                         <td className="px-3.5 py-3">
                           <Badge variant={trade.paymentType === "STORE_CREDIT" ? "blue" : "slate"}>
-                            {trade.paymentType === "STORE_CREDIT" ? "Store Credit" : "Cash"}
+                            {trade.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase"}
                           </Badge>
                         </td>
                         <td className="px-3.5 py-3 text-slate-400 text-[12px]">
