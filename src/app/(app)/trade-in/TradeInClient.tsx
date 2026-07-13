@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { formatGBP } from "@/lib/utils";
 import { completeTrade } from "./actions";
 import { Trash2, Plus, ChevronDown, ClipboardList, PenLine } from "lucide-react";
@@ -101,7 +101,15 @@ function itemTypeBadge(type: ItemType) {
 
 export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }: TradeInClientProps) {
   const [form, setForm] = useState(emptyForm);
-  const [session, setSession] = useState<SessionCard[]>([]);
+  const [session, setSession] = useState<SessionCard[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("atlas-trade-in-session");
+      return saved ? (JSON.parse(saved) as SessionCard[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [cashPct, setCashPct] = useState(defaultCashPct);
   const [creditPct, setCreditPct] = useState(defaultCreditPct);
   const [isPending, startTransition] = useTransition();
@@ -109,6 +117,16 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
   const [mobileTab, setMobileTab] = useState<"add" | "session">("add");
   const [confirmAccept, setConfirmAccept] = useState<{ paymentType: PaymentType; total: number } | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      if (session.length === 0) {
+        localStorage.removeItem("atlas-trade-in-session");
+      } else {
+        localStorage.setItem("atlas-trade-in-session", JSON.stringify(session));
+      }
+    } catch {}
+  }, [session]);
 
   const marketValue = parseFloat(form.marketValue) || 0;
   const quantity = parseInt(form.quantity) || 1;
