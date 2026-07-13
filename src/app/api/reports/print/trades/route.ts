@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       const market = t.cards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
       const payBadge =
         t.paymentType === "CASH"
-          ? `<span class="badge badge-green">Cash</span>`
+          ? `<span class="badge badge-green">Purchase</span>`
           : `<span class="badge badge-blue">Store Credit</span>`;
       return `<tr>
         <td><strong>#${t.number}</strong></td>

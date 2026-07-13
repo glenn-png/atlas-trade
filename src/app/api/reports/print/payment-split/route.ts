@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     <div class="summary-grid">
       <div class="summary-cell"><div class="summary-label">Total Trades</div><div class="summary-value">${trades.length}</div></div>
       <div class="summary-cell"><div class="summary-label">Total Paid Out</div><div class="summary-value">${gbp(grandTotal)}</div></div>
-      <div class="summary-cell"><div class="summary-label">Cash Trades</div><div class="summary-value">${cashTrades.length}</div></div>
+      <div class="summary-cell"><div class="summary-label">Purchase Trades</div><div class="summary-value">${cashTrades.length}</div></div>
       <div class="summary-cell"><div class="summary-label">Credit Trades</div><div class="summary-value">${creditTrades.length}</div></div>
     </div>`;
 
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       <thead><tr><th>Payment Type</th><th>Trades</th><th>Cards</th><th class="right">Total Paid Out</th><th class="right">% of Total</th></tr></thead>
       <tbody>
         <tr>
-          <td><span class="badge badge-green">Cash</span></td>
+          <td><span class="badge badge-green">Purchase</span></td>
           <td>${cashTrades.length}</td>
           <td>${cashCards}</td>
           <td class="right mono">${gbp(cashTotal)}</td>
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
   const tradeRows = trades.map((t) => {
     const cost = t.cards.reduce((s, c) => s + c.purchasePrice, 0);
     const badge = t.paymentType === "CASH"
-      ? `<span class="badge badge-green">Cash</span>`
+      ? `<span class="badge badge-green">Purchase</span>`
       : `<span class="badge badge-blue">Store Credit</span>`;
     return `<tr>
       <td><strong>#${t.number}</strong></td>
@@ -86,6 +86,6 @@ export async function GET(req: NextRequest) {
       <tbody>${tradeRows}</tbody>
     </table>`;
 
-  const html = printHtml("Cash vs Credit Report", periodLabel, summaryGrid + splitTable + tradeTable);
+  const html = printHtml("Purchase vs Credit Report", periodLabel, summaryGrid + splitTable + tradeTable);
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }

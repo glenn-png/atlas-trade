@@ -137,10 +137,10 @@ export function ReportsClient({ defaultFrom, defaultTo }: ReportsClientProps) {
         printHref={`/api/reports/print/trades?from=${tradesFrom}&to=${tradesTo}`}
       />
 
-      {/* Cash vs Credit Split */}
+      {/* Purchase vs Credit Split */}
       <ReportCard
-        title="Cash vs Credit Split"
-        description="Breakdown of trades by payment type — how much you paid out in cash vs store credit, and the proportion of each."
+        title="Purchase vs Credit Split"
+        description="Breakdown of trades by payment type — how much you paid out as purchase vs store credit, and the proportion of each."
         sheets={["Summary", "All Trades"]}
         hasDateRange
         from={splitFrom}

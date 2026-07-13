@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const grandTotal = cashTotal + creditTotal;
 
   const summaryRows = [
-    { "Payment Type": "Cash", "Trades": cashTrades.length, "Cards": cashTrades.reduce((s, t) => s + t.cards.length, 0), "Total Paid Out (£)": +cashTotal.toFixed(2), "% of Total": grandTotal > 0 ? +((cashTotal / grandTotal) * 100).toFixed(1) : 0 },
+    { "Payment Type": "Purchase", "Trades": cashTrades.length, "Cards": cashTrades.reduce((s, t) => s + t.cards.length, 0), "Total Paid Out (£)": +cashTotal.toFixed(2), "% of Total": grandTotal > 0 ? +((cashTotal / grandTotal) * 100).toFixed(1) : 0 },
     { "Payment Type": "Store Credit", "Trades": creditTrades.length, "Cards": creditTrades.reduce((s, t) => s + t.cards.length, 0), "Total Paid Out (£)": +creditTotal.toFixed(2), "% of Total": grandTotal > 0 ? +((creditTotal / grandTotal) * 100).toFixed(1) : 0 },
     { "Payment Type": "TOTAL", "Trades": trades.length, "Cards": trades.reduce((s, t) => s + t.cards.length, 0), "Total Paid Out (£)": +grandTotal.toFixed(2), "% of Total": 100 },
   ];
