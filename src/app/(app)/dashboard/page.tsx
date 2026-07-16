@@ -476,12 +476,13 @@ function StatCard({
   accent?: "blue" | "green" | "amber" | "red";
   compact?: boolean;
 }) {
-  const accentColor = {
+  const colorMap = {
     blue: "var(--color-accent)",
     green: "var(--color-success)",
     amber: "var(--color-warning)",
     red: "var(--color-danger)",
-  }[accent ?? ""] ?? "white";
+  } as const;
+  const accentColor = accent ? colorMap[accent] : "white";
 
   return (
     <div className={`bg-navy-800 border border-white/7 rounded-[10px] ${compact ? "px-3 py-3" : "px-3 py-3 sm:px-5 sm:py-4"}`}>
