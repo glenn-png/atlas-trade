@@ -53,6 +53,17 @@ const CONGRATS: { emoji: string; message: string }[] = [
   { emoji: "🐉", message: "Dragonite flew across the world to deliver this congrats!" },
   { emoji: "🔴", message: "Professor Oak said: Outstanding! A fine trade was made today." },
   { emoji: "💫", message: "Eevee doesn't know which form to evolve into — this trade was too hype!" },
+  { emoji: "🌺", message: "Vileplume bloomed with pride at your trading skills!" },
+  { emoji: "🧲", message: "Magneton was attracted to this trade from three routes away." },
+  { emoji: "👁️", message: "Alakazam had a vision of this trade. It was glorious." },
+  { emoji: "🌀", message: "Gastly, Haunter, and Gengar all clapped. That's six hands." },
+  { emoji: "🏄", message: "Lapras surfed all the way here to say: incredible trade." },
+  { emoji: "⚙️", message: "Registeel approved. And Registeel approves of very little." },
+  { emoji: "🍄", message: "Foongus disguised itself as a Poké Ball just to celebrate this one." },
+  { emoji: "🦊", message: "Ninetales has seen a thousand trades. This one made the list." },
+  { emoji: "🪨", message: "Geodude gave you a thumbs up. Both of them. It's all thumbs." },
+  { emoji: "🌙", message: "Lunala crossed dimensions to witness this legendary trade." },
+  { emoji: "🎪", message: "Mr. Mime put on a full mime performance — a standing ovation for you." },
 ];
 
 const emptyForm = {
