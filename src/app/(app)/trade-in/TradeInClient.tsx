@@ -64,6 +64,8 @@ const CONGRATS: { emoji: string; message: string }[] = [
   { emoji: "🪨", message: "Geodude gave you a thumbs up. Both of them. It's all thumbs." },
   { emoji: "🌙", message: "Lunala crossed dimensions to witness this legendary trade." },
   { emoji: "🎪", message: "Mr. Mime put on a full mime performance — a standing ovation for you." },
+  { emoji: "🐘", message: "Phanpy did a little roll to celebrate. It's the highest honour." },
+  { emoji: "🐷", message: "Lechonk sniffed this trade and deemed it absolutely top tier." },
 ];
 
 const emptyForm = {
