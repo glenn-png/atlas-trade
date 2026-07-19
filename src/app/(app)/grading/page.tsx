@@ -6,11 +6,11 @@ import { formatGBP } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
 const COMPANIES: Record<string, { color: string; bg: string }> = {
-  PSA:     { color: "text-blue-400",   bg: "bg-blue-400/10 border-blue-400/20" },
-  BGS:     { color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20" },
-  ACE:     { color: "text-emerald-400",bg: "bg-emerald-400/10 border-emerald-400/20" },
-  MGC:     { color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/20" },
-  Beckett: { color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/20" },
+  PSA:     { color: "text-blue-400",    bg: "bg-blue-400/10 border-blue-400/20" },
+  BGS:     { color: "text-yellow-400",  bg: "bg-yellow-400/10 border-yellow-400/20" },
+  ACE:     { color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/20" },
+  MGC:     { color: "text-purple-400",  bg: "bg-purple-400/10 border-purple-400/20" },
+  Beckett: { color: "text-orange-400",  bg: "bg-orange-400/10 border-orange-400/20" },
 };
 
 function CompanyBadge({ company }: { company: string }) {
@@ -31,15 +31,36 @@ export default async function GradingPage() {
   const active = submissions.filter((s) => s.status === "SUBMITTED");
   const completed = submissions.filter((s) => s.status === "RETURNED");
 
+  // Dashboard stats — completed submissions only
+  const gradedCards = completed.flatMap((s) => s.cards);
+  const totalGradedCount = gradedCards.length;
+  const totalPurchaseCost = gradedCards.reduce((s, c) => s + c.purchasePrice, 0);
+  const totalGradingSpend = gradedCards.reduce((s, c) => s + (c.gradingCost ?? 0), 0);
+  const totalMarketValue = gradedCards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+  const totalPnl = totalMarketValue - (totalPurchaseCost + totalGradingSpend);
+
+  // Per-company breakdown across all completed submissions
+  const companyTotals = completed.reduce<Record<string, { count: number; pnl: number }>>((acc, sub) => {
+    const purchaseCost = sub.cards.reduce((s, c) => s + c.purchasePrice, 0);
+    const gradingCost = sub.cards.reduce((s, c) => s + (c.gradingCost ?? 0), 0);
+    const market = sub.cards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+    if (!acc[sub.company]) acc[sub.company] = { count: 0, pnl: 0 };
+    acc[sub.company].count += sub.cards.length;
+    acc[sub.company].pnl += market - (purchaseCost + gradingCost);
+    return acc;
+  }, {});
+
   const activeCards = active.reduce((s, sub) => s + sub.cards.length, 0);
+  const hasCompleted = completed.length > 0;
 
   return (
     <div>
+      {/* Topbar */}
       <div className="bg-navy-900 border-b border-white/7 px-4 sm:px-6 py-3 flex items-center gap-4">
         <div className="flex-1">
           <div className="text-[15px] font-bold text-white">Grading</div>
           <div className="text-[13px] text-slate-400">
-            {active.length} active submission{active.length !== 1 ? "s" : ""} · {activeCards} card{activeCards !== 1 ? "s" : ""} out
+            {active.length} active · {activeCards} card{activeCards !== 1 ? "s" : ""} out · {completed.length} completed
           </div>
         </div>
         <Link
@@ -52,10 +73,65 @@ export default async function GradingPage() {
 
       <div className="p-4 sm:p-6 space-y-6">
 
-        {/* Active submissions */}
+        {/* ── Grading Dashboard ── */}
+        {hasCompleted && (
+          <section>
+            <div className="text-[11px] font-bold tracking-widest uppercase text-slate-400 mb-3">
+              Grading overview
+            </div>
+
+            {/* Summary stat cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+                <div className="text-[11px] text-slate-400 mb-1">Graded cards</div>
+                <div className="text-[22px] font-bold text-white">{totalGradedCount}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">{completed.length} submission{completed.length !== 1 ? "s" : ""}</div>
+              </div>
+              <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+                <div className="text-[11px] text-slate-400 mb-1">Grading spend</div>
+                <div className="text-[22px] font-bold text-warning">{formatGBP(totalGradingSpend)}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">fees across all subs</div>
+              </div>
+              <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+                <div className="text-[11px] text-slate-400 mb-1">Market value</div>
+                <div className="text-[22px] font-bold text-success">{formatGBP(totalMarketValue)}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">paid {formatGBP(totalPurchaseCost)}</div>
+              </div>
+              <div className={`bg-navy-800 border rounded-[10px] px-4 py-3 ${totalPnl >= 0 ? "border-success/20" : "border-danger/20"}`}>
+                <div className="text-[11px] text-slate-400 mb-1">Total P&amp;L</div>
+                <div className={`text-[22px] font-bold ${totalPnl >= 0 ? "text-success" : "text-danger"}`}>
+                  {totalPnl >= 0 ? "+" : ""}{formatGBP(totalPnl)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">market − (cost + fees)</div>
+              </div>
+            </div>
+
+            {/* Per-company breakdown */}
+            {Object.keys(companyTotals).length > 1 && (
+              <div className="bg-navy-800 border border-white/7 rounded-[10px] overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-white/7 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                  By company
+                </div>
+                <div className="divide-y divide-white/5">
+                  {Object.entries(companyTotals).map(([company, { count, pnl }]) => (
+                    <div key={company} className="px-4 py-3 flex items-center gap-3">
+                      <CompanyBadge company={company} />
+                      <span className="text-[13px] text-slate-300 flex-1">{count} card{count !== 1 ? "s" : ""}</span>
+                      <span className={`text-[13px] font-mono font-semibold ${pnl >= 0 ? "text-success" : "text-danger"}`}>
+                        {pnl >= 0 ? "+" : ""}{formatGBP(pnl)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Active submissions ── */}
         <section>
           <div className="text-[11px] font-bold tracking-widest uppercase text-slate-400 mb-3">
-            Active — Out for grading ({active.length})
+            Active — out for grading ({active.length})
           </div>
           {active.length === 0 ? (
             <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-10 text-center">
@@ -69,7 +145,6 @@ export default async function GradingPage() {
             <div className="space-y-3">
               {active.map((sub) => {
                 const totalCost = sub.cards.reduce((s, c) => s + c.purchasePrice, 0);
-                const gradingCostSoFar = sub.cards.reduce((s, c) => s + (c.gradingCost ?? 0), 0);
                 return (
                   <Link
                     key={sub.id}
@@ -107,11 +182,11 @@ export default async function GradingPage() {
           )}
         </section>
 
-        {/* Completed */}
+        {/* ── Completed submissions ── */}
         {completed.length > 0 && (
           <section>
             <div className="text-[11px] font-bold tracking-widest uppercase text-slate-400 mb-3">
-              Completed — Returned ({completed.length})
+              Completed — returned ({completed.length})
             </div>
             <div className="bg-navy-800 border border-white/7 rounded-[10px] overflow-hidden">
               <table className="w-full text-[13px]">
@@ -131,12 +206,16 @@ export default async function GradingPage() {
                     const marketValue = sub.cards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
                     const pnl = marketValue - (purchaseCost + gradingCost);
                     return (
-                      <tr key={sub.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                        <td className="px-3.5 py-3"><Link href={`/grading/${sub.id}`}><CompanyBadge company={sub.company} /></Link></td>
+                      <tr key={sub.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                        <td className="px-3.5 py-3">
+                          <Link href={`/grading/${sub.id}`}><CompanyBadge company={sub.company} /></Link>
+                        </td>
                         <td className="px-3.5 py-3 font-mono text-slate-400 text-[12px]">{sub.reference ?? "—"}</td>
                         <td className="px-3.5 py-3 text-slate-300">{sub.cards.length}</td>
                         <td className="px-3.5 py-3 text-slate-400 text-[12px]">
-                          {sub.returnedAt ? new Date(sub.returnedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          {sub.returnedAt
+                            ? new Date(sub.returnedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                            : "—"}
                         </td>
                         <td className="px-3.5 py-3 font-mono text-slate-300">
                           {gradingCost > 0 ? formatGBP(gradingCost) : "—"}
