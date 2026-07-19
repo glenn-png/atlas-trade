@@ -83,6 +83,16 @@ db.exec(`
     updatedAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS GradingSubmission (
+    id          TEXT PRIMARY KEY,
+    company     TEXT NOT NULL,
+    reference   TEXT,
+    status      TEXT NOT NULL DEFAULT 'SUBMITTED',
+    notes       TEXT,
+    submittedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    returnedAt  DATETIME
+  );
+
   CREATE TABLE IF NOT EXISTS SalesDay (
     id               TEXT PRIMARY KEY,
     date             DATETIME NOT NULL UNIQUE,
@@ -102,6 +112,12 @@ if (!cardCols.includes("quantity"))
   db.exec("ALTER TABLE Card ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1");
 if (!cardCols.includes("grade"))
   db.exec("ALTER TABLE Card ADD COLUMN grade TEXT");
+if (!cardCols.includes("gradingSubmissionId"))
+  db.exec("ALTER TABLE Card ADD COLUMN gradingSubmissionId TEXT REFERENCES GradingSubmission(id)");
+if (!cardCols.includes("gradingCost"))
+  db.exec("ALTER TABLE Card ADD COLUMN gradingCost REAL");
+if (!cardCols.includes("gradedAt"))
+  db.exec("ALTER TABLE Card ADD COLUMN gradedAt DATETIME");
 if (!cardCols.includes("gradingSubmissionId"))
   db.exec("ALTER TABLE Card ADD COLUMN gradingSubmissionId TEXT");
 if (!cardCols.includes("gradingCost"))

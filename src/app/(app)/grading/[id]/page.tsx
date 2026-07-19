@@ -96,6 +96,21 @@ export default async function GradingSubmissionPage({
             <div className="text-[22px] font-bold text-success">{totalMarket > 0 ? formatGBP(totalMarket) : "—"}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">returned cards only</div>
           </div>
+          {isComplete && (() => {
+            const totalCost = totalPurchaseCost + totalGradingCost;
+            const pnl = totalMarket - totalCost;
+            return (
+              <div className={`bg-navy-800 border rounded-[10px] px-4 py-3 col-span-2 sm:col-span-4 ${pnl >= 0 ? "border-success/20" : "border-danger/20"}`}>
+                <div className="text-[11px] text-slate-400 mb-1">Total P&amp;L</div>
+                <div className={`text-[22px] font-bold ${pnl >= 0 ? "text-success" : "text-danger"}`}>
+                  {pnl >= 0 ? "+" : ""}{formatGBP(pnl)}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  market {formatGBP(totalMarket)} − cost {formatGBP(totalCost)}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {submission.notes && (
@@ -113,7 +128,7 @@ export default async function GradingSubmissionPage({
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-navy-900">
-                  {["Card", "Origin", "Purchase Price", "Grade", "Grading Cost", "Market Value", "Status", ""].map((h) => (
+                  {["Card", "Origin", "Purchase Price", "Grade", "Grading Cost", "Market Value", "P&L", "Status", ""].map((h) => (
                     <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap">
                       {h}
                     </th>
@@ -151,6 +166,16 @@ export default async function GradingSubmissionPage({
                       </td>
                       <td className="px-3.5 py-3 font-mono text-success">
                         {card.marketValue ? formatGBP(card.marketValue) : "—"}
+                      </td>
+                      <td className="px-3.5 py-3 font-mono text-[12px]">
+                        {isReturned && card.marketValue ? (() => {
+                          const pnl = card.marketValue - card.purchasePrice - (card.gradingCost ?? 0);
+                          return (
+                            <span className={pnl >= 0 ? "text-success" : "text-danger"}>
+                              {pnl >= 0 ? "+" : ""}{formatGBP(pnl)}
+                            </span>
+                          );
+                        })() : <span className="text-slate-500">—</span>}
                       </td>
                       <td className="px-3.5 py-3">
                         <Badge variant={isReturned ? "green" : "amber"}>

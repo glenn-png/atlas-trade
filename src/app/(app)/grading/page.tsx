@@ -117,7 +117,7 @@ export default async function GradingPage() {
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="bg-navy-900">
-                    {["Company", "Ref", "Cards", "Returned", "Grading Cost"].map((h) => (
+                    {["Company", "Ref", "Cards", "Returned", "Grading Cost", "P&L"].map((h) => (
                       <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap">
                         {h}
                       </th>
@@ -126,10 +126,13 @@ export default async function GradingPage() {
                 </thead>
                 <tbody>
                   {completed.map((sub) => {
+                    const purchaseCost = sub.cards.reduce((s, c) => s + c.purchasePrice, 0);
                     const gradingCost = sub.cards.reduce((s, c) => s + (c.gradingCost ?? 0), 0);
+                    const marketValue = sub.cards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+                    const pnl = marketValue - (purchaseCost + gradingCost);
                     return (
                       <tr key={sub.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                        <td className="px-3.5 py-3"><CompanyBadge company={sub.company} /></td>
+                        <td className="px-3.5 py-3"><Link href={`/grading/${sub.id}`}><CompanyBadge company={sub.company} /></Link></td>
                         <td className="px-3.5 py-3 font-mono text-slate-400 text-[12px]">{sub.reference ?? "—"}</td>
                         <td className="px-3.5 py-3 text-slate-300">{sub.cards.length}</td>
                         <td className="px-3.5 py-3 text-slate-400 text-[12px]">
@@ -137,6 +140,11 @@ export default async function GradingPage() {
                         </td>
                         <td className="px-3.5 py-3 font-mono text-slate-300">
                           {gradingCost > 0 ? formatGBP(gradingCost) : "—"}
+                        </td>
+                        <td className="px-3.5 py-3 font-mono text-[12px]">
+                          <span className={pnl >= 0 ? "text-success" : "text-danger"}>
+                            {pnl >= 0 ? "+" : ""}{formatGBP(pnl)}
+                          </span>
                         </td>
                       </tr>
                     );
