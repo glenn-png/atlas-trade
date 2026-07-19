@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { formatGBP, calcMargin } from "@/lib/utils";
 import { Badge } from "@/components/Badge";
 import { ArrowLeft } from "lucide-react";
+import { DeleteTradeButton } from "./DeleteTradeButton";
 
 export default async function TradePage({
   params,
@@ -61,6 +62,7 @@ export default async function TradePage({
         <Badge variant={trade.paymentType === "STORE_CREDIT" ? "blue" : "slate"}>
           {trade.paymentType === "STORE_CREDIT" ? "Store Credit" : "Purchase"}
         </Badge>
+        <DeleteTradeButton tradeId={trade.id} tradeNumber={trade.number} cardCount={trade.cards.length} />
       </div>
 
       <div className="p-6 space-y-6">
