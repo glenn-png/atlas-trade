@@ -40,6 +40,34 @@ export async function returnCard(data: {
   revalidatePath("/grading");
 }
 
+export async function editCard(data: {
+  cardId: string;
+  submissionId: string;
+  grade: string;
+  gradingCost: number;
+  marketValue: number;
+}) {
+  await prisma.card.update({
+    where: { id: data.cardId },
+    data: {
+      grade: data.grade,
+      gradingCost: data.gradingCost,
+      marketValue: data.marketValue,
+    },
+  });
+  revalidatePath(`/grading/${data.submissionId}`);
+  revalidatePath("/grading");
+}
+
+export async function closeSubmission(submissionId: string) {
+  await prisma.gradingSubmission.update({
+    where: { id: submissionId },
+    data: { status: "RETURNED", returnedAt: new Date() },
+  });
+  revalidatePath(`/grading/${submissionId}`);
+  revalidatePath("/grading");
+}
+
 export async function updateSubmissionNotes(submissionId: string, notes: string) {
   await prisma.gradingSubmission.update({
     where: { id: submissionId },

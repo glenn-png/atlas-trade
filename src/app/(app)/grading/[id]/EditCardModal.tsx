@@ -2,17 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { formatGBP } from "@/lib/utils";
-import { returnCard } from "./actions";
+import { editCard } from "./actions";
+import { Pencil } from "lucide-react";
 
 type Card = {
   id: string;
   name: string;
-  set: string;
   purchasePrice: number;
+  grade: string | null;
+  gradingCost: number | null;
   marketValue: number | null;
 };
 
-export function ReturnCardModal({
+export function EditCardModal({
   card,
   submissionId,
   company,
@@ -22,8 +24,8 @@ export function ReturnCardModal({
   company: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [grade, setGrade] = useState("");
-  const [gradingCost, setGradingCost] = useState("");
+  const [grade, setGrade] = useState(card.grade ?? "");
+  const [gradingCost, setGradingCost] = useState(card.gradingCost?.toString() ?? "");
   const [marketValue, setMarketValue] = useState(card.marketValue?.toString() ?? "");
   const [isPending, startTransition] = useTransition();
 
@@ -31,7 +33,7 @@ export function ReturnCardModal({
     e.preventDefault();
     if (!grade.trim()) return;
     startTransition(async () => {
-      await returnCard({
+      await editCard({
         cardId: card.id,
         submissionId,
         grade: grade.trim(),
@@ -46,23 +48,23 @@ export function ReturnCardModal({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="px-3 py-1.5 text-[12px] font-semibold bg-success/10 border border-success/25 text-success rounded-[6px] hover:bg-success/20 transition-colors"
+        className="px-2.5 py-1.5 text-[12px] font-semibold bg-white/5 border border-white/12 text-slate-400 rounded-[6px] hover:text-white hover:border-white/20 transition-colors flex items-center gap-1"
       >
-        Mark returned
+        <Pencil size={11} /> Edit
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="bg-navy-800 border border-white/10 rounded-[14px] w-full max-w-sm p-6 space-y-4">
             <div>
-              <div className="text-[16px] font-bold text-white">Return card</div>
+              <div className="text-[16px] font-bold text-white">Edit card</div>
               <div className="text-[13px] text-slate-400 mt-0.5">{card.name}</div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                  {company} Grade received <span className="text-danger">*</span>
+                  {company} Grade <span className="text-danger">*</span>
                 </div>
                 <input
                   type="number"
@@ -72,7 +74,7 @@ export function ReturnCardModal({
                   step="0.5"
                   value={grade}
                   onChange={(e) => setGrade(e.target.value)}
-                  placeholder={`e.g. ${company === "PSA" || company === "MGC" || company === "ACE" ? "10" : "9.5"}`}
+                  placeholder="e.g. 9.5"
                   className="w-full bg-navy-900 border border-white/12 rounded-[8px] text-white text-[15px] px-4 py-2.5 outline-none focus:border-accent placeholder:text-slate-500"
                   autoFocus
                 />
@@ -95,7 +97,7 @@ export function ReturnCardModal({
               </div>
 
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Updated market value (£)</div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Market value (£)</div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono">£</span>
                   <input
@@ -125,9 +127,9 @@ export function ReturnCardModal({
                 <button
                   type="submit"
                   disabled={isPending || !grade.trim()}
-                  className="flex-1 py-3 rounded-[10px] text-[14px] font-bold text-white bg-success hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="flex-1 py-3 rounded-[10px] text-[14px] font-bold text-white bg-accent hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {isPending ? "Saving…" : "Confirm return"}
+                  {isPending ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>

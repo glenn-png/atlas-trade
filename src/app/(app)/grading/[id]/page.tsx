@@ -7,6 +7,8 @@ import { formatGBP } from "@/lib/utils";
 import { Badge } from "@/components/Badge";
 import { ArrowLeft } from "lucide-react";
 import { ReturnCardModal } from "./ReturnCardModal";
+import { EditCardModal } from "./EditCardModal";
+import { CloseSubmissionButton } from "./CloseSubmissionButton";
 
 const COMPANY_STYLE: Record<string, { color: string; bg: string }> = {
   PSA:     { color: "text-blue-400",    bg: "bg-blue-400/10 border-blue-400/20" },
@@ -67,6 +69,9 @@ export default async function GradingSubmissionPage({
             )}
           </div>
         </div>
+        {!isComplete && (
+          <CloseSubmissionButton submissionId={submission.id} pendingCount={pending.length} />
+        )}
         <Badge variant={isComplete ? "green" : "amber"}>
           {isComplete ? "Returned" : `${pending.length} pending`}
         </Badge>
@@ -183,13 +188,22 @@ export default async function GradingSubmissionPage({
                         </Badge>
                       </td>
                       <td className="px-3.5 py-3">
-                        {!isReturned && (
-                          <ReturnCardModal
-                            card={card}
-                            submissionId={submission.id}
-                            company={submission.company}
-                          />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {!isReturned && (
+                            <ReturnCardModal
+                              card={card}
+                              submissionId={submission.id}
+                              company={submission.company}
+                            />
+                          )}
+                          {isReturned && (
+                            <EditCardModal
+                              card={card}
+                              submissionId={submission.id}
+                              company={submission.company}
+                            />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
