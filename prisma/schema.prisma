@@ -61,6 +61,7 @@ model Card {
   paymentType   PaymentType?
   channel       SaleChannel?
   notes         String?
+  gradeWorthy         Boolean   @default(false)
   gradingSubmissionId String?
   gradingSubmission   GradingSubmission? @relation(fields: [gradingSubmissionId], references: [id])
   gradingCost         Float?

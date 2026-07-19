@@ -63,7 +63,7 @@ export function NewGradingClient({ cards }: { cards: Card[] }) {
       <div className="flex-1 overflow-auto p-4 sm:p-6 lg:border-r border-white/7">
         <div className="max-w-2xl space-y-4">
           <div className="text-[11px] font-bold tracking-widest uppercase text-slate-400">
-            Select cards from inventory ({cards.length} in stock)
+            Grade worthy cards ({cards.length} available)
           </div>
 
           {/* Search */}
@@ -81,7 +81,14 @@ export function NewGradingClient({ cards }: { cards: Card[] }) {
           {/* Card list */}
           <div className="space-y-1.5">
             {filtered.length === 0 && (
-              <div className="text-center py-8 text-slate-500 text-[13px]">No cards match</div>
+              <div className="text-center py-8 space-y-1">
+                <div className="text-slate-400 text-[13px] font-semibold">
+                  {cards.length === 0 ? "No grade worthy cards in inventory" : "No cards match"}
+                </div>
+                {cards.length === 0 && (
+                  <div className="text-slate-500 text-[12px]">Flag cards as grade worthy during a trade-in to see them here</div>
+                )}
+              </div>
             )}
             {filtered.map((card) => {
               const isSelected = selected.has(card.id);

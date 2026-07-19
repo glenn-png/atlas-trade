@@ -112,6 +112,8 @@ if (!cardCols.includes("quantity"))
   db.exec("ALTER TABLE Card ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1");
 if (!cardCols.includes("grade"))
   db.exec("ALTER TABLE Card ADD COLUMN grade TEXT");
+if (!cardCols.includes("gradeWorthy"))
+  db.exec("ALTER TABLE Card ADD COLUMN gradeWorthy INTEGER NOT NULL DEFAULT 0");
 if (!cardCols.includes("gradingSubmissionId"))
   db.exec("ALTER TABLE Card ADD COLUMN gradingSubmissionId TEXT REFERENCES GradingSubmission(id)");
 if (!cardCols.includes("gradingCost"))

@@ -21,6 +21,7 @@ interface SessionCard {
   quantity: number;
   marketValue: number; // per unit
   notes: string;
+  gradeWorthy: boolean;
 }
 
 const CONDITIONS: Condition[] = ["NM", "LP", "MP", "HP"];
@@ -79,6 +80,7 @@ const emptyForm = {
   quantity: "1",
   marketValue: "",
   notes: "",
+  gradeWorthy: false,
 };
 
 interface TradeInClientProps {
@@ -203,6 +205,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
             : (card.marketValue * creditPct / 100) * card.quantity,
           marketValue: card.marketValue * card.quantity,
           notes: card.notes,
+          gradeWorthy: card.gradeWorthy,
         })),
       });
       const total = paymentType === "CASH" ? totalCash : totalCredit;
@@ -410,6 +413,35 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
         </div>
       )}
 
+      {/* Grade worthy flag — singles only */}
+      {form.itemType === "SINGLE" && (
+        <label className="flex items-center gap-3 cursor-pointer select-none group">
+          <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center shrink-0 transition-colors ${
+            form.gradeWorthy
+              ? "bg-amber-500/20 border-amber-500"
+              : "bg-navy-800 border-white/20 group-hover:border-white/40"
+          }`}>
+            {form.gradeWorthy && (
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={form.gradeWorthy}
+            onChange={(e) => setForm({ ...form, gradeWorthy: e.target.checked })}
+          />
+          <div>
+            <div className="text-[13px] font-semibold text-slate-300 group-hover:text-white transition-colors">
+              Grade worthy 🏆
+            </div>
+            <div className="text-[11px] text-slate-500">Flag for grading submission</div>
+          </div>
+        </label>
+      )}
+
       <button
         type="submit"
         disabled={!form.name.trim() || marketValue <= 0}
@@ -448,9 +480,12 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                   <div key={card.id} className="px-4 py-3">
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[13px] font-semibold text-white truncate">{itemLabel(card)}</span>
                           {itemTypeBadge(card.itemType)}
+                          {card.gradeWorthy && (
+                            <span className="text-[10px] font-bold text-amber-400">🏆 Grade worthy</span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-400 truncate">{itemSub(card)}</div>
                       </div>

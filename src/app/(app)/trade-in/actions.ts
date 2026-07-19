@@ -15,6 +15,7 @@ interface CardInput {
   purchasePrice: number;
   marketValue: number;
   notes?: string;
+  gradeWorthy?: boolean;
 }
 
 interface CompleteTradeInput {
@@ -45,6 +46,7 @@ export async function completeTrade(input: CompleteTradeInput): Promise<{ tradeN
           purchasePrice: c.purchasePrice,
           marketValue: c.marketValue || null,
           notes: c.notes || null,
+          gradeWorthy: c.gradeWorthy ?? false,
           paymentType: input.paymentType,
           status: "IN_STOCK" as const,
         })),
