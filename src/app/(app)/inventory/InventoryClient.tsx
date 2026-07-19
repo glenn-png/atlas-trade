@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { formatGBP, calcMargin } from "@/lib/utils";
 import { Badge } from "@/components/Badge";
 import { Modal } from "@/components/Modal";
-import { markAsSold, addCard } from "./actions";
+import { markAsSold, addCard, toggleGradeWorthy } from "./actions";
 import { Plus, CheckCircle, Eye } from "lucide-react";
 
 type Condition = "NM" | "LP" | "MP" | "HP";
@@ -22,6 +22,7 @@ interface Card {
   salePrice: number | null;
   status: CardStatus;
   paymentType: string | null;
+  gradeWorthy: boolean;
   trade: { number: number } | null;
 }
 
@@ -242,20 +243,36 @@ export function InventoryClient({
                         </Badge>
                       </td>
                       <td className="px-3.5 py-3">
-                        {!sold ? (
-                          <button
-                            onClick={() => handleMarkSold(card)}
-                            disabled={isPending}
-                            title="Mark as sold"
-                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-slate-300 border border-white/7 rounded-[6px] hover:text-white hover:border-white/20 transition-colors disabled:opacity-40"
-                          >
-                            <CheckCircle size={11} /> Sold
-                          </button>
-                        ) : (
-                          <div className="w-[26px] h-[26px] flex items-center justify-center text-slate-600">
-                            <Eye size={12} />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {card.status === "IN_STOCK" && (
+                            <button
+                              onClick={() => startTransition(() => toggleGradeWorthy({ cardId: card.id, gradeWorthy: !card.gradeWorthy }))}
+                              disabled={isPending}
+                              title={card.gradeWorthy ? "Remove grade worthy flag" : "Flag as grade worthy"}
+                              className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-[6px] border transition-colors disabled:opacity-40 ${
+                                card.gradeWorthy
+                                  ? "text-amber-400 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20"
+                                  : "text-slate-400 border-white/7 hover:text-amber-400 hover:border-amber-500/30"
+                              }`}
+                            >
+                              🏆
+                            </button>
+                          )}
+                          {!sold ? (
+                            <button
+                              onClick={() => handleMarkSold(card)}
+                              disabled={isPending}
+                              title="Mark as sold"
+                              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-slate-300 border border-white/7 rounded-[6px] hover:text-white hover:border-white/20 transition-colors disabled:opacity-40"
+                            >
+                              <CheckCircle size={11} /> Sold
+                            </button>
+                          ) : (
+                            <div className="w-[26px] h-[26px] flex items-center justify-center text-slate-600">
+                              <Eye size={12} />
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

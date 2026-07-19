@@ -14,6 +14,15 @@ interface AddCardInput {
   notes?: string;
 }
 
+export async function toggleGradeWorthy({ cardId, gradeWorthy }: { cardId: string; gradeWorthy: boolean }) {
+  await prisma.card.update({
+    where: { id: cardId },
+    data: { gradeWorthy },
+  });
+  revalidatePath("/inventory");
+  revalidatePath("/grading");
+}
+
 export async function markAsSold({ cardId }: { cardId: string }) {
   await prisma.card.update({
     where: { id: cardId },
