@@ -120,25 +120,6 @@ if (!cardCols.includes("gradingCost"))
   db.exec("ALTER TABLE Card ADD COLUMN gradingCost REAL");
 if (!cardCols.includes("gradedAt"))
   db.exec("ALTER TABLE Card ADD COLUMN gradedAt DATETIME");
-if (!cardCols.includes("gradingSubmissionId"))
-  db.exec("ALTER TABLE Card ADD COLUMN gradingSubmissionId TEXT");
-if (!cardCols.includes("gradingCost"))
-  db.exec("ALTER TABLE Card ADD COLUMN gradingCost REAL");
-if (!cardCols.includes("gradedAt"))
-  db.exec("ALTER TABLE Card ADD COLUMN gradedAt DATETIME");
-
-// Migrate: create GradingSubmission table if it doesn't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS GradingSubmission (
-    id          TEXT PRIMARY KEY,
-    company     TEXT NOT NULL,
-    reference   TEXT,
-    status      TEXT NOT NULL DEFAULT 'SUBMITTED',
-    notes       TEXT,
-    submittedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    returnedAt  DATETIME
-  );
-`);
 
 // Seed first admin if no users exist
 const userCount = db.prepare("SELECT COUNT(*) as count FROM User").get();
