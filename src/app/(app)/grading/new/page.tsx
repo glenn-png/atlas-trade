@@ -5,7 +5,7 @@ import { NewGradingClient } from "./NewGradingClient";
 
 export default async function NewGradingPage() {
   const cards = await prisma.card.findMany({
-    where: { status: "IN_STOCK" },
+    where: { status: "IN_STOCK", gradingSubmissionId: null },
     include: { trade: { select: { number: true } } },
     orderBy: { acquiredAt: "desc" },
   });
