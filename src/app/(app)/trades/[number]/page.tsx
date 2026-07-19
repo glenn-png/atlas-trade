@@ -7,6 +7,7 @@ import { formatGBP, calcMargin } from "@/lib/utils";
 import { Badge } from "@/components/Badge";
 import { ArrowLeft } from "lucide-react";
 import { DeleteTradeButton } from "./DeleteTradeButton";
+import { GradeWorthyButton } from "./GradeWorthyButton";
 
 export default async function TradePage({
   params,
@@ -111,7 +112,7 @@ export default async function TradePage({
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-navy-900">
-                  {["Type", "Item", "Condition / Grade", "Purchase Price", "Market Value", "Est. Margin", "Status"].map((h) => (
+                  {["Type", "Item", "Condition / Grade", "Purchase Price", "Market Value", "Est. Margin", "Status", ""].map((h) => (
                     <th
                       key={h}
                       className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap"
@@ -207,6 +208,14 @@ export default async function TradePage({
                             ? "Sold"
                             : "Reserved"}
                         </Badge>
+                      </td>
+                      <td className="px-3.5 py-3">
+                        {card.status === "IN_STOCK" && (
+                          <GradeWorthyButton
+                            cardId={card.id}
+                            gradeWorthy={(card as { gradeWorthy?: boolean }).gradeWorthy ?? false}
+                          />
+                        )}
                       </td>
                     </tr>
                   );
