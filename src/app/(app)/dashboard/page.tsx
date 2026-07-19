@@ -148,6 +148,7 @@ export default async function DashboardPage({
   const currentRevenue = currentSalesDays.reduce((s, d) => s + d.msSinglesTotal, 0);
   const previousRevenue = previousSalesDays.reduce((s, d) => s + d.msSinglesTotal, 0);
   const currentCost = currentTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
+  const currentMarketValue = currentTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + (c.marketValue ?? 0), 0), 0);
   const previousCost = previousTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
   const currentTradeCount = currentTrades.length;
   const previousTradeCount = previousTrades.length;
@@ -265,13 +266,38 @@ export default async function DashboardPage({
               delta={cardDelta}
               sub={currentTradeCount > 0 ? `across ${currentTradeCount} trade${currentTradeCount !== 1 ? "s" : ""}` : undefined}
             />
-            <StatCard
-              label="Purchase Cost"
-              value={formatGBP(currentCost)}
-              delta={costDelta ? { ...costDelta, positive: !costDelta.positive } : null}
-              sub={currentCardCount > 0 ? `avg ${formatGBP(currentCost / currentCardCount)} / item` : undefined}
-              accent="amber"
-            />
+            <div className="bg-navy-800 border border-white/7 rounded-[10px] px-3 py-3 sm:px-5 sm:py-4">
+              <div className="text-[11px] sm:text-[12px] font-medium text-slate-400 mb-2 leading-tight">Cost vs Market</div>
+              <div className="space-y-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[11px] text-slate-500">Paid</span>
+                  <span className="text-[16px] sm:text-[20px] font-bold font-mono" style={{ color: "var(--color-warning)" }}>
+                    {formatGBP(currentCost)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[11px] text-slate-500">Market</span>
+                  <span className="text-[16px] sm:text-[20px] font-bold font-mono" style={{ color: "var(--color-success)" }}>
+                    {currentMarketValue > 0 ? formatGBP(currentMarketValue) : "—"}
+                  </span>
+                </div>
+              </div>
+              {costDelta && (
+                <div className="mt-1.5">
+                  <span
+                    className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
+                    style={{
+                      color: costDelta.positive ? "var(--color-danger)" : "var(--color-success)",
+                      background: costDelta.positive
+                        ? "color-mix(in srgb, var(--color-danger) 12%, transparent)"
+                        : "color-mix(in srgb, var(--color-success) 12%, transparent)",
+                    }}
+                  >
+                    {costDelta.label}
+                  </span>
+                </div>
+              )}
+            </div>
             <StatCard
               label="MS-Singles Revenue"
               value={currentRevenue > 0 ? formatGBP(currentRevenue) : "—"}
