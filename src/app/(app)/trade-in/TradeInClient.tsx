@@ -116,15 +116,7 @@ function itemTypeBadge(type: ItemType) {
 
 export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }: TradeInClientProps) {
   const [form, setForm] = useState(emptyForm);
-  const [session, setSession] = useState<SessionCard[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = localStorage.getItem("atlas-trade-in-session");
-      return saved ? (JSON.parse(saved) as SessionCard[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [session, setSession] = useState<SessionCard[]>([]);
   const [cashPct, setCashPct] = useState(defaultCashPct);
   const [creditPct, setCreditPct] = useState(defaultCreditPct);
   const [isPending, startTransition] = useTransition();
@@ -133,6 +125,15 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
   const [confirmAccept, setConfirmAccept] = useState<{ paymentType: PaymentType; total: number } | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
+  // Load persisted session after mount to avoid SSR/client mismatch
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("atlas-trade-in-session");
+      if (saved) setSession(JSON.parse(saved) as SessionCard[]);
+    } catch {}
+  }, []);
+
+  // Persist session to localStorage on every change
   useEffect(() => {
     try {
       if (session.length === 0) {
