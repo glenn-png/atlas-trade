@@ -17,7 +17,7 @@ export default async function InventoryPage({
 
   const where = {
     ...(q ? { OR: [{ name: { contains: q } }, { set: { contains: q } }] } : {}),
-    ...(statusFilter && statusFilter !== "ALL" ? { status: statusFilter as "IN_STOCK" | "SOLD" | "RESERVED" } : {}),
+    ...(statusFilter && statusFilter !== "ALL" ? { status: statusFilter as "IN_STOCK" | "SOLD" | "RESERVED" | "GRADING" } : {}),
     ...(conditionFilter ? { condition: conditionFilter as "NM" | "LP" | "MP" | "HP" } : {}),
   };
 

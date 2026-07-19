@@ -8,7 +8,7 @@ import { markAsSold, addCard } from "./actions";
 import { Plus, CheckCircle, Eye } from "lucide-react";
 
 type Condition = "NM" | "LP" | "MP" | "HP";
-type CardStatus = "IN_STOCK" | "SOLD" | "RESERVED";
+type CardStatus = "IN_STOCK" | "SOLD" | "RESERVED" | "GRADING";
 
 interface Card {
   id: string;

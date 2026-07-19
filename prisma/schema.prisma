@@ -61,10 +61,25 @@ model Card {
   paymentType   PaymentType?
   channel       SaleChannel?
   notes         String?
+  gradingSubmissionId String?
+  gradingSubmission   GradingSubmission? @relation(fields: [gradingSubmissionId], references: [id])
+  gradingCost         Float?
+  gradedAt            DateTime?
   acquiredAt    DateTime    @default(now())
   soldAt        DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model GradingSubmission {
+  id          String    @id @default(cuid())
+  company     String
+  reference   String?
+  status      String    @default("SUBMITTED")
+  notes       String?
+  submittedAt DateTime  @default(now())
+  returnedAt  DateTime?
+  cards       Card[]
 }
 
 enum Condition {
@@ -78,6 +93,7 @@ enum CardStatus {
   IN_STOCK
   SOLD
   RESERVED
+  GRADING
 }
 
 enum PaymentType {
