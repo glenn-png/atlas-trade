@@ -24,7 +24,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
   { href: "/trade-in", label: "Trade-In", icon: ArrowLeftRight, adminOnly: false },
   { href: "/grading", label: "Grading", icon: Award, adminOnly: false },
-  { href: "/inventory", label: "Inventory", icon: Package, adminOnly: true },
+  { href: "/inventory", label: "Inventory", icon: Package, adminOnly: false },
   { href: "/vat", label: "VAT Centre", icon: Receipt, adminOnly: true },
   { href: "/reports", label: "Reports", icon: FileText, adminOnly: true },
   { href: "/admin/users", label: "Users", icon: Users, adminOnly: true },
