@@ -7,7 +7,7 @@ import { Trash2, Plus, ChevronDown, ClipboardList, PenLine } from "lucide-react"
 
 type ItemType = "SINGLE" | "GRADED" | "SEALED" | "BULK";
 type Condition = "NM" | "LP" | "MP" | "HP";
-type PaymentType = "CASH" | "STORE_CREDIT";
+type PaymentType = "PURCHASE" | "STORE_CREDIT";
 
 interface SessionCard {
   id: string;
@@ -181,7 +181,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
   }
 
   function handleAccept(paymentType: PaymentType) {
-    const total = paymentType === "CASH" ? totalCash : totalCredit;
+    const total = paymentType === "PURCHASE" ? totalCash : totalCredit;
     setConfirmAccept({ paymentType, total });
   }
 
@@ -201,7 +201,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           condition: card.condition,
           grade: card.grade,
           quantity: card.quantity,
-          purchasePrice: paymentType === "CASH"
+          purchasePrice: paymentType === "PURCHASE"
             ? (card.marketValue * cashPct / 100) * card.quantity
             : (card.marketValue * creditPct / 100) * card.quantity,
           marketValue: card.marketValue * card.quantity,
@@ -209,7 +209,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           gradeWorthy: card.gradeWorthy,
         })),
       });
-      const total = paymentType === "CASH" ? totalCash : totalCredit;
+      const total = paymentType === "PURCHASE" ? totalCash : totalCredit;
       const congrats = CONGRATS[Math.floor(Math.random() * CONGRATS.length)];
       setDone({ count: session.length, total, type: paymentType, tradeNumber, congrats });
       setSession([]);
@@ -229,7 +229,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
           <div className="text-slate-400 text-[15px]">
             {done.count} item{done.count !== 1 ? "s" : ""} added for{" "}
             <span className="text-white font-semibold">{formatGBP(done.total)}</span>{" "}
-            {done.type === "CASH" ? "purchase" : "store credit"}
+            {done.type === "PURCHASE" ? "purchase" : "store credit"}
           </div>
           <button
             onClick={() => { setDone(null); setMobileTab("add"); }}
@@ -574,7 +574,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
             </div>
             <div className="space-y-2 pt-1">
               <button
-                onClick={() => handleAccept("CASH")}
+                onClick={() => handleAccept("PURCHASE")}
                 disabled={isPending}
                 className="w-full bg-success text-white font-bold text-[16px] py-4 rounded-[12px] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
@@ -614,7 +614,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Payment</span>
-                <span className="text-white font-semibold">{confirmAccept.paymentType === "CASH" ? "Purchase" : "Store Credit"}</span>
+                <span className="text-white font-semibold">{confirmAccept.paymentType === "PURCHASE" ? "Purchase" : "Store Credit"}</span>
               </div>
               <div className="flex justify-between text-[15px] pt-1 border-t border-white/7 mt-2">
                 <span className="text-slate-300 font-semibold">Total</span>
@@ -632,7 +632,7 @@ export function TradeInClient({ defaultCashPct, defaultCreditPct, recentTrades }
                 onClick={confirmAndSubmit}
                 disabled={isPending}
                 className={`flex-1 py-3 rounded-[10px] text-[14px] font-bold text-white transition-opacity disabled:opacity-50 ${
-                  confirmAccept.paymentType === "CASH" ? "bg-success hover:opacity-90" : "bg-accent hover:opacity-90"
+                  confirmAccept.paymentType === "PURCHASE" ? "bg-success hover:opacity-90" : "bg-accent hover:opacity-90"
                 }`}
               >
                 {isPending ? "Processing…" : "Confirm"}

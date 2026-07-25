@@ -207,8 +207,8 @@ export function ReportsClient({ defaultFrom, defaultTo }: ReportsClientProps) {
       {/* VAT Summary */}
       <ReportCard
         title="VAT Summary"
-        description="Quarterly VAT breakdown for HMRC. Includes purchases, MS-Singles sales, margin, and VAT due. Three sheets: summary, daily sales log, purchase log."
-        sheets={["VAT Summary", "Sales Log", "Purchase Log"]}
+        description="Quarterly VAT breakdown for HMRC. Estimated using margin scheme: (market value − buy price) ÷ 6 per card. Two sheets: quarterly summary and full card ledger."
+        sheets={["VAT Summary", "Card Ledger"]}
         hasDateRange
         from={vatFrom}
         to={vatTo}

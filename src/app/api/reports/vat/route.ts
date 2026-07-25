@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
         Type: c.itemType,
         Acquired: c.acquiredAt.toLocaleDateString("en-GB"),
         Quarter: quarterLabel(c.acquiredAt.getFullYear(), getQuarter(c.acquiredAt)),
-        Payment: c.paymentType === "CASH" ? "Cash" : c.paymentType === "STORE_CREDIT" ? "Store Credit" : "",
+        Payment: c.paymentType === "PURCHASE" ? "Purchase" : c.paymentType === "STORE_CREDIT" ? "Store Credit" : "",
         Status: c.status,
         "Buy Price (£)": +c.purchasePrice.toFixed(2),
         "Market Value (£)": +c.marketValue!.toFixed(2),

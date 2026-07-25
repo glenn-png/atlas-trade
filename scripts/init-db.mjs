@@ -126,6 +126,10 @@ if (!cardCols.includes("gradingCost"))
 if (!cardCols.includes("gradedAt"))
   db.exec("ALTER TABLE Card ADD COLUMN gradedAt DATETIME");
 
+// Migrate: rename CASH → PURCHASE in paymentType fields
+db.exec("UPDATE Trade SET paymentType = 'PURCHASE' WHERE paymentType = 'CASH'");
+db.exec("UPDATE Card SET paymentType = 'PURCHASE' WHERE paymentType = 'CASH'");
+
 // Seed first admin if no users exist
 const userCount = db.prepare("SELECT COUNT(*) as count FROM User").get();
 if (userCount.count === 0) {

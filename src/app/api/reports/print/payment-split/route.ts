@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     orderBy: { number: "asc" },
   });
 
-  const cashTrades = trades.filter((t) => t.paymentType === "CASH");
+  const cashTrades = trades.filter((t) => t.paymentType === "PURCHASE");
   const creditTrades = trades.filter((t) => t.paymentType === "STORE_CREDIT");
   const cashTotal = cashTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
   const creditTotal = creditTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 
   const tradeRows = trades.map((t) => {
     const cost = t.cards.reduce((s, c) => s + c.purchasePrice, 0);
-    const badge = t.paymentType === "CASH"
+    const badge = t.paymentType === "PURCHASE"
       ? `<span class="badge badge-green">Purchase</span>`
       : `<span class="badge badge-blue">Store Credit</span>`;
     return `<tr>

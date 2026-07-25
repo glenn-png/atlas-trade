@@ -170,7 +170,7 @@ export default async function DashboardPage({
   const revDelta = delta(currentRevenue, previousRevenue);
 
   // Payment split for current period
-  const cashTrades = currentTrades.filter((t) => t.paymentType === "CASH");
+  const cashTrades = currentTrades.filter((t) => t.paymentType === "PURCHASE");
   const creditTrades = currentTrades.filter((t) => t.paymentType === "STORE_CREDIT");
   const cashCost = cashTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
   const creditCost = creditTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);

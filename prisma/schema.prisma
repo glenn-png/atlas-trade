@@ -98,7 +98,7 @@ enum CardStatus {
 }
 
 enum PaymentType {
-  CASH
+  PURCHASE
   STORE_CREDIT
 }
 

@@ -33,13 +33,18 @@ export default async function VATPage() {
   // All cards with purchase price and market value
   const cards = await prisma.card.findMany({
     select: {
+      id: true,
+      name: true,
+      set: true,
+      setNumber: true,
+      itemType: true,
       purchasePrice: true,
       marketValue: true,
       paymentType: true,
       status: true,
       acquiredAt: true,
-      itemType: true,
     },
+    orderBy: { acquiredAt: "desc" },
   });
 
   // VAT estimate per card: max(0, market - purchase) / 6
@@ -51,7 +56,7 @@ export default async function VATPage() {
     cards: number;
     paid: number;
     market: number;
-    cash: { paid: number; market: number };
+    purchase: { paid: number; market: number };
     credit: { paid: number; market: number };
   };
   const quarters: Record<string, QData> = {};
@@ -59,13 +64,13 @@ export default async function VATPage() {
   for (const card of vatCards) {
     const d = card.acquiredAt;
     const key = `${d.getFullYear()}-${getQuarter(d)}`;
-    if (!quarters[key]) quarters[key] = { cards: 0, paid: 0, market: 0, cash: { paid: 0, market: 0 }, credit: { paid: 0, market: 0 } };
+    if (!quarters[key]) quarters[key] = { cards: 0, paid: 0, market: 0, purchase: { paid: 0, market: 0 }, credit: { paid: 0, market: 0 } };
     quarters[key].cards++;
     quarters[key].paid += card.purchasePrice;
     quarters[key].market += card.marketValue!;
-    if (card.paymentType === "CASH") {
-      quarters[key].cash.paid += card.purchasePrice;
-      quarters[key].cash.market += card.marketValue!;
+    if (card.paymentType === "PURCHASE") {
+      quarters[key].purchase.paid += card.purchasePrice;
+      quarters[key].purchase.market += card.marketValue!;
     } else {
       quarters[key].credit.paid += card.purchasePrice;
       quarters[key].credit.market += card.marketValue!;
@@ -303,6 +308,86 @@ export default async function VATPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        {/* Card ledger */}
+        <section>
+          <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">
+            VAT Ledger — All Cards ({cards.filter(c => c.marketValue != null).length} with market value)
+          </div>
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="bg-navy-900">
+                    {["Card", "Set", "Type", "Acquired", "Payment", "Status", "Buy Price", "Market Value", "Margin", "Est. VAT"].map((h) => (
+                      <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {cards.filter(c => c.marketValue != null).map((card) => {
+                    const margin = card.marketValue! - card.purchasePrice;
+                    const vat = margin > 0 ? margin / 6 : 0;
+                    const d = card.acquiredAt;
+                    const dateStr = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth()+1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+                    return (
+                      <tr key={card.id} className="border-b border-white/7 last:border-0 hover:bg-white/2 transition-colors">
+                        <td className="px-3.5 py-2.5 font-medium text-white max-w-[180px]">
+                          <div className="truncate">{card.name}</div>
+                          {card.setNumber && <div className="text-[11px] text-slate-500">#{card.setNumber}</div>}
+                        </td>
+                        <td className="px-3.5 py-2.5 text-slate-400 text-[12px] max-w-[140px]">
+                          <div className="truncate">{card.set}</div>
+                        </td>
+                        <td className="px-3.5 py-2.5 text-slate-400 text-[11px] whitespace-nowrap">
+                          {card.itemType}
+                        </td>
+                        <td className="px-3.5 py-2.5 text-slate-400 text-[12px] whitespace-nowrap font-mono">
+                          {dateStr}
+                        </td>
+                        <td className="px-3.5 py-2.5 whitespace-nowrap">
+                          <span className={`text-[11px] font-semibold ${card.paymentType === "PURCHASE" ? "text-warning" : "text-accent"}`}>
+                            {card.paymentType === "PURCHASE" ? "Purchase" : card.paymentType === "STORE_CREDIT" ? "Credit" : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2.5 whitespace-nowrap">
+                          <span className={`text-[11px] font-semibold ${
+                            card.status === "IN_STOCK" ? "text-success" :
+                            card.status === "SOLD" ? "text-slate-400" :
+                            card.status === "GRADING" ? "text-purple" : "text-slate-400"
+                          }`}>
+                            {card.status === "IN_STOCK" ? "In Stock" : card.status === "SOLD" ? "Sold" : card.status}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2.5 font-mono text-warning whitespace-nowrap">{formatGBP(card.purchasePrice)}</td>
+                        <td className="px-3.5 py-2.5 font-mono text-success whitespace-nowrap">{formatGBP(card.marketValue!)}</td>
+                        <td className="px-3.5 py-2.5 font-mono whitespace-nowrap">
+                          <span className={margin > 0 ? "text-success" : "text-slate-400"}>{formatGBP(margin)}</span>
+                        </td>
+                        <td className="px-3.5 py-2.5 font-mono font-bold text-warning whitespace-nowrap">
+                          {vat > 0 ? formatGBP(vat) : <span className="text-slate-500">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-navy-900 border-t border-white/12">
+                    <td colSpan={6} className="px-3.5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Totals
+                    </td>
+                    <td className="px-3.5 py-3 font-mono font-bold text-warning">{formatGBP(totalPaid)}</td>
+                    <td className="px-3.5 py-3 font-mono font-bold text-success">{formatGBP(totalMarket)}</td>
+                    <td className="px-3.5 py-3 font-mono font-bold text-success">{formatGBP(totalMargin)}</td>
+                    <td className="px-3.5 py-3 font-mono font-bold text-warning">{formatGBP(totalVAT)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </section>
 

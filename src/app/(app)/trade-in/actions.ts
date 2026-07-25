@@ -19,7 +19,7 @@ interface CardInput {
 }
 
 interface CompleteTradeInput {
-  paymentType: "CASH" | "STORE_CREDIT";
+  paymentType: "PURCHASE" | "STORE_CREDIT";
   cards: CardInput[];
 }
 

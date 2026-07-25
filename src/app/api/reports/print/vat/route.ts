@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     return `<tr>
       <td>${c.name}${c.setNumber ? ` <span style="color:#999;font-size:10px">#${c.setNumber}</span>` : ""}</td>
       <td>${c.set}</td>
-      <td>${c.paymentType === "CASH" ? "Cash" : c.paymentType === "STORE_CREDIT" ? "Credit" : "—"}</td>
+      <td>${c.paymentType === "PURCHASE" ? "Purchase" : c.paymentType === "STORE_CREDIT" ? "Credit" : "—"}</td>
       <td>${c.acquiredAt.toLocaleDateString("en-GB")}</td>
       <td class="right mono">${gbp(c.purchasePrice)}</td>
       <td class="right mono">${gbp(c.marketValue!)}</td>
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
   const note = `<p style="font-size:10px;color:#555;margin-bottom:20px;padding:10px;border:1px solid #ddd;border-radius:6px;">
     <strong>UK VAT Margin Scheme — Global Accounting Method.</strong>
     VAT is estimated as 1/6 of the positive margin per card (Market Value − Buy Price).
-    Buy price reflects payment type: 70% of market for cash, 80% for store credit.
+    Buy price reflects payment type: 70% of market for purchases, 80% for store credit.
     This report is for reference only — verify with your accountant before filing.
   </p>`;
 
