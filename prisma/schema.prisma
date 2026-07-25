@@ -109,6 +109,11 @@ enum SaleChannel {
   OTHER
 }
 
+model VatFiling {
+  quarter  String   @id // e.g. "2026-Q2"
+  filedAt  DateTime @default(now())
+}
+
 model SumupCredential {
   id           String   @id @default("default")
   merchantCode String

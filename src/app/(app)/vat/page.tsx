@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import { formatGBP } from "@/lib/utils";
-import { Badge } from "@/components/Badge";
-import { ManualSalesDayEntry, SalesDayDeleteButton } from "./VATClient";
+import { FilingButton } from "./FilingButton";
 
 function getQuarter(date: Date) {
   return Math.floor(date.getMonth() / 3);
@@ -27,64 +26,65 @@ export default async function VATPage() {
   const currentYear = now.getFullYear();
   const currentQ = getQuarter(now);
 
-  // Purchases: sum of all trade-in purchase prices by quarter
-  const allCards = await prisma.card.findMany({
-    select: { purchasePrice: true, acquiredAt: true },
+  // Filed quarters
+  const filings = await prisma.vatFiling.findMany();
+  const filedMap = new Map(filings.map((f) => [f.quarter, f.filedAt]));
+
+  // All cards with purchase price and market value
+  const cards = await prisma.card.findMany({
+    select: {
+      purchasePrice: true,
+      marketValue: true,
+      paymentType: true,
+      status: true,
+      acquiredAt: true,
+      itemType: true,
+    },
   });
 
-  // Sales: from SalesDay table
-  const allSalesDays = await prisma.salesDay.findMany({
-    orderBy: { date: "desc" },
-  });
+  // VAT estimate per card: max(0, market - purchase) / 6
+  // Only cards with a market value set
+  const vatCards = cards.filter((c) => c.marketValue != null && c.marketValue > c.purchasePrice);
 
-  // Build quarterly buckets (last 6 quarters)
-  type QKey = string;
-  const quarters: Record<QKey, { purchases: number; sales: number }> = {};
+  // ── Quarterly buckets ──────────────────────────────────────────────────────
+  type QData = {
+    cards: number;
+    paid: number;
+    market: number;
+    cash: { paid: number; market: number };
+    credit: { paid: number; market: number };
+  };
+  const quarters: Record<string, QData> = {};
 
-  for (const card of allCards) {
+  for (const card of vatCards) {
     const d = card.acquiredAt;
-    const qKey = `${d.getFullYear()}-${getQuarter(d)}`;
-    if (!quarters[qKey]) quarters[qKey] = { purchases: 0, sales: 0 };
-    quarters[qKey].purchases += card.purchasePrice;
+    const key = `${d.getFullYear()}-${getQuarter(d)}`;
+    if (!quarters[key]) quarters[key] = { cards: 0, paid: 0, market: 0, cash: { paid: 0, market: 0 }, credit: { paid: 0, market: 0 } };
+    quarters[key].cards++;
+    quarters[key].paid += card.purchasePrice;
+    quarters[key].market += card.marketValue!;
+    if (card.paymentType === "CASH") {
+      quarters[key].cash.paid += card.purchasePrice;
+      quarters[key].cash.market += card.marketValue!;
+    } else {
+      quarters[key].credit.paid += card.purchasePrice;
+      quarters[key].credit.market += card.marketValue!;
+    }
   }
 
-  for (const sd of allSalesDays) {
-    const d = new Date(sd.date);
-    const qKey = `${d.getFullYear()}-${getQuarter(d)}`;
-    if (!quarters[qKey]) quarters[qKey] = { purchases: 0, sales: 0 };
-    quarters[qKey].sales += sd.msSinglesTotal;
-  }
+  const quarterKeys = Object.keys(quarters).sort((a, b) => b.localeCompare(a)).slice(0, 8);
 
-  const quarterKeys = Object.keys(quarters)
-    .sort((a, b) => b.localeCompare(a))
-    .slice(0, 6);
+  // ── Monthly buckets (last 6) ───────────────────────────────────────────────
+  type MData = { cards: number; paid: number; market: number };
+  const monthly: Record<string, MData> = {};
 
-  // Current quarter data
-  const currentQKey = `${currentYear}-${currentQ}`;
-  const currentQData = quarters[currentQKey] ?? { purchases: 0, sales: 0 };
-  const currentMargin = currentQData.sales - currentQData.purchases;
-  const currentVAT = currentMargin > 0 ? currentMargin / 6 : 0;
-
-  // VAT deadline: 7th of the month following end of quarter
-  const qEndMonth = (currentQ + 1) * 3; // e.g. Q2 ends June (month 5), deadline = 7 Aug
-  const vatDeadline = new Date(currentYear, qEndMonth + 1, 7);
-  const daysToDeadline = Math.ceil((vatDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-  // Monthly breakdown (last 6 months)
-  const monthly: Record<string, { purchases: number; sales: number }> = {};
-
-  for (const card of allCards) {
+  for (const card of vatCards) {
     const d = card.acquiredAt;
     const key = `${d.getFullYear()}-${d.getMonth()}`;
-    if (!monthly[key]) monthly[key] = { purchases: 0, sales: 0 };
-    monthly[key].purchases += card.purchasePrice;
-  }
-
-  for (const sd of allSalesDays) {
-    const d = new Date(sd.date);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    if (!monthly[key]) monthly[key] = { purchases: 0, sales: 0 };
-    monthly[key].sales += sd.msSinglesTotal;
+    if (!monthly[key]) monthly[key] = { cards: 0, paid: 0, market: 0 };
+    monthly[key].cards++;
+    monthly[key].paid += card.purchasePrice;
+    monthly[key].market += card.marketValue!;
   }
 
   const last6Months = Array.from({ length: 6 }, (_, i) => {
@@ -92,8 +92,29 @@ export default async function VATPage() {
     return { key: `${d.getFullYear()}-${d.getMonth()}`, year: d.getFullYear(), month: d.getMonth() };
   });
 
-  // Recent sales days for the log (last 30)
-  const recentSalesDays = allSalesDays.slice(0, 30);
+  // ── Current quarter ────────────────────────────────────────────────────────
+  const currentQKey = `${currentYear}-${currentQ}`;
+  const currentQData = quarters[currentQKey];
+  const currentMargin = currentQData ? currentQData.market - currentQData.paid : 0;
+  const currentVAT = currentMargin > 0 ? currentMargin / 6 : 0;
+
+  // ── In-stock snapshot ──────────────────────────────────────────────────────
+  const inStockCards = cards.filter((c) => c.status === "IN_STOCK" && c.marketValue != null);
+  const inStockPaid = inStockCards.reduce((s, c) => s + c.purchasePrice, 0);
+  const inStockMarket = inStockCards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+  const inStockMargin = inStockMarket - inStockPaid;
+  const inStockVAT = inStockMargin > 0 ? inStockMargin / 6 : 0;
+
+  // ── Overall totals ─────────────────────────────────────────────────────────
+  const totalPaid = vatCards.reduce((s, c) => s + c.purchasePrice, 0);
+  const totalMarket = vatCards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+  const totalMargin = totalMarket - totalPaid;
+  const totalVAT = totalMargin > 0 ? totalMargin / 6 : 0;
+
+  // VAT deadline
+  const qEndMonth = (currentQ + 1) * 3;
+  const vatDeadline = new Date(currentYear, qEndMonth + 1, 7);
+  const daysToDeadline = Math.ceil((vatDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
   return (
     <div>
@@ -112,11 +133,9 @@ export default async function VATPage() {
 
       <div className="p-6 space-y-6">
 
-        {/* Current quarter alert */}
+        {/* Current quarter banner */}
         <div className={`border rounded-[10px] px-4 py-3 flex items-center gap-3.5 ${
-          daysToDeadline <= 30
-            ? "bg-warning/12 border-warning/30"
-            : "bg-navy-800 border-white/7"
+          daysToDeadline <= 30 ? "bg-warning/12 border-warning/30" : "bg-navy-800 border-white/7"
         }`}>
           <span className="text-[20px]">{daysToDeadline <= 30 ? "⚠" : "📋"}</span>
           <div className="flex-1">
@@ -124,24 +143,75 @@ export default async function VATPage() {
               {quarterLabel(currentYear, currentQ)} · VAT return due in {daysToDeadline} days
             </div>
             <div className="text-[12px] text-slate-300 mt-0.5">
-              Purchases: <strong>{formatGBP(currentQData.purchases)}</strong> ·{" "}
-              Sales: <strong>{currentQData.sales > 0 ? formatGBP(currentQData.sales) : "no data yet"}</strong> ·{" "}
-              {currentMargin > 0
-                ? <>VAT due: <strong className="text-warning">{formatGBP(currentVAT)}</strong></>
-                : <span className="text-slate-400">No VAT due (purchases exceed sales)</span>
+              {currentQData
+                ? <>
+                    {currentQData.cards} cards · Paid <strong>{formatGBP(currentQData.paid)}</strong> ·{" "}
+                    Market <strong>{formatGBP(currentQData.market)}</strong> ·{" "}
+                    Est. VAT: <strong className="text-warning">{formatGBP(currentVAT)}</strong>
+                  </>
+                : <span className="text-slate-400">No cards with market values acquired this quarter yet</span>
               }
             </div>
           </div>
         </div>
 
-        {/* Quarterly Summary */}
+        {/* Summary tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+            <div className="text-[11px] text-slate-400 mb-1">Total paid (all cards)</div>
+            <div className="text-[22px] font-bold text-warning">{formatGBP(totalPaid)}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">{vatCards.length} cards with market value</div>
+          </div>
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+            <div className="text-[11px] text-slate-400 mb-1">Total market value</div>
+            <div className="text-[22px] font-bold text-success">{formatGBP(totalMarket)}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">at current market prices</div>
+          </div>
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] px-4 py-3">
+            <div className="text-[11px] text-slate-400 mb-1">Total margin</div>
+            <div className={`text-[22px] font-bold ${totalMargin > 0 ? "text-success" : "text-slate-400"}`}>
+              {formatGBP(totalMargin)}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">market − paid</div>
+          </div>
+          <div className="bg-navy-800 border border-danger/20 rounded-[10px] px-4 py-3">
+            <div className="text-[11px] text-slate-400 mb-1">Total est. VAT liability</div>
+            <div className="text-[22px] font-bold text-warning">{formatGBP(totalVAT)}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">margin ÷ 6 · all cards</div>
+          </div>
+        </div>
+
+        {/* In-stock snapshot */}
+        <section>
+          <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">Current Inventory Liability</div>
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <div className="text-[11px] text-slate-400 mb-0.5">Cards in stock</div>
+              <div className="text-[18px] font-bold text-white">{inStockCards.length}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-400 mb-0.5">Total paid</div>
+              <div className="text-[18px] font-bold text-warning">{formatGBP(inStockPaid)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-400 mb-0.5">Market value</div>
+              <div className="text-[18px] font-bold text-success">{formatGBP(inStockMarket)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-400 mb-0.5">Est. VAT if sold at market</div>
+              <div className="text-[18px] font-bold text-warning">{formatGBP(inStockVAT)}</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Quarterly summary */}
         <section>
           <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">Quarterly Summary</div>
           <div className="bg-navy-800 border border-white/7 rounded-[10px] overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-navy-900">
-                  {["Quarter", "Period", "Purchases", "Sales (SumUp)", "Margin", "VAT Due (1/6)", "Status"].map((h) => (
+                  {["Quarter", "Period", "Cards", "Total Paid", "Market Value", "Margin", "Est. VAT (÷6)", "Status"].map((h) => (
                     <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap">
                       {h}
                     </th>
@@ -151,37 +221,38 @@ export default async function VATPage() {
               <tbody>
                 {quarterKeys.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
-                      No data yet. Add sales entries below or complete some trade-ins.
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                      No cards with market values yet.
                     </td>
                   </tr>
                 ) : (
                   quarterKeys.map((qKey) => {
                     const [y, q] = qKey.split("-").map(Number);
                     const data = quarters[qKey];
-                    const margin = data.sales - data.purchases;
+                    const margin = data.market - data.paid;
                     const vat = margin > 0 ? margin / 6 : 0;
                     const isCurrent = y === currentYear && q === currentQ;
+                    const qLabel = quarterLabel(y, q);
+                    const filedAt = filedMap.get(qLabel);
+                    const filed = !!filedAt;
                     return (
                       <tr key={qKey} className={`border-b border-white/7 last:border-0 ${isCurrent ? "bg-warning/4" : ""}`}>
-                        <td className="px-3.5 py-3 font-bold text-white">{quarterLabel(y, q)}</td>
+                        <td className="px-3.5 py-3 font-bold text-white">{qLabel}</td>
                         <td className="px-3.5 py-3 text-slate-400 text-[12px]">{quarterDates(y, q)}</td>
-                        <td className="px-3.5 py-3 font-mono text-slate-200">{formatGBP(data.purchases)}</td>
-                        <td className="px-3.5 py-3 font-mono text-slate-200">
-                          {data.sales > 0 ? formatGBP(data.sales) : <span className="text-slate-500">—</span>}
-                        </td>
+                        <td className="px-3.5 py-3 text-slate-300">{data.cards}</td>
+                        <td className="px-3.5 py-3 font-mono text-warning">{formatGBP(data.paid)}</td>
+                        <td className="px-3.5 py-3 font-mono text-success">{formatGBP(data.market)}</td>
                         <td className="px-3.5 py-3 font-mono">
-                          {data.sales > 0 ? (
-                            <span className={margin > 0 ? "text-success" : "text-slate-400"}>{formatGBP(margin)}</span>
-                          ) : <span className="text-slate-500">—</span>}
+                          <span className={margin > 0 ? "text-success" : "text-slate-400"}>{formatGBP(margin)}</span>
                         </td>
-                        <td className="px-3.5 py-3 font-mono font-bold" style={{ color: isCurrent ? "var(--color-warning)" : "var(--color-success)" }}>
-                          {vat > 0 ? formatGBP(vat) : <span className="text-slate-400 font-normal">£0.00</span>}
+                        <td className="px-3.5 py-3 font-mono font-bold text-warning">
+                          {formatGBP(vat)}
                         </td>
                         <td className="px-3.5 py-3">
-                          <Badge variant={isCurrent ? "amber" : "green"}>
-                            {isCurrent ? "In Progress" : "Filed"}
-                          </Badge>
+                          {isCurrent
+                            ? <span className="text-[11px] text-slate-400 italic">In progress</span>
+                            : <FilingButton quarter={qLabel} filed={filed} filedAt={filedAt?.toISOString()} />
+                          }
                         </td>
                       </tr>
                     );
@@ -199,7 +270,7 @@ export default async function VATPage() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-navy-900">
-                  {["Month", "Purchases", "Sales", "Margin", "VAT Due", "Quarter"].map((h) => (
+                  {["Month", "Cards", "Total Paid", "Market Value", "Margin", "Est. VAT", "Quarter"].map((h) => (
                     <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7">
                       {h}
                     </th>
@@ -212,17 +283,20 @@ export default async function VATPage() {
                   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
                   const q = Math.floor(month / 3);
                   const isCurrent = year === currentYear && q === currentQ;
-                  const margin = data ? data.sales - data.purchases : 0;
+                  const margin = data ? data.market - data.paid : 0;
                   const vat = margin > 0 ? margin / 6 : 0;
                   return (
                     <tr key={key} className={`border-b border-white/7 last:border-0 ${isCurrentMonth ? "bg-accent/4" : ""}`}>
                       <td className="px-3.5 py-3 font-semibold text-white">{MONTH_NAMES[month]} {year}</td>
-                      <td className="px-3.5 py-3 font-mono text-slate-200">{data ? formatGBP(data.purchases) : "—"}</td>
-                      <td className="px-3.5 py-3 font-mono text-slate-200">{data?.sales ? formatGBP(data.sales) : "—"}</td>
-                      <td className="px-3.5 py-3 font-mono">{data?.sales ? <span className={margin > 0 ? "text-success" : "text-slate-400"}>{formatGBP(margin)}</span> : "—"}</td>
-                      <td className="px-3.5 py-3 font-mono text-warning">{vat > 0 ? formatGBP(vat) : "—"}</td>
-                      <td className="px-3.5 py-3">
-                        <Badge variant={isCurrent ? "amber" : "green"}>{quarterLabel(year, q)}</Badge>
+                      <td className="px-3.5 py-3 text-slate-300">{data?.cards ?? "—"}</td>
+                      <td className="px-3.5 py-3 font-mono text-warning">{data ? formatGBP(data.paid) : "—"}</td>
+                      <td className="px-3.5 py-3 font-mono text-success">{data ? formatGBP(data.market) : "—"}</td>
+                      <td className="px-3.5 py-3 font-mono">
+                        {data ? <span className={margin > 0 ? "text-success" : "text-slate-400"}>{formatGBP(margin)}</span> : "—"}
+                      </td>
+                      <td className="px-3.5 py-3 font-mono text-warning">{data && vat > 0 ? formatGBP(vat) : "—"}</td>
+                      <td className="px-3.5 py-3 text-[12px] text-slate-400">
+                        {quarterLabel(year, q)}
                       </td>
                     </tr>
                   );
@@ -232,65 +306,24 @@ export default async function VATPage() {
           </div>
         </section>
 
-        {/* Manual Sales Entry */}
-        <section>
-          <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 mb-3">Sales Log — MS Single Cards</div>
-          <div className="bg-navy-800 border border-white/7 rounded-[10px] p-4 space-y-4">
-            <div className="text-[12px] text-slate-400">
-              Enter your daily "MS - Single Cards" total from SumUp. Once SumUp is connected in Settings, this will fill automatically.
-            </div>
-
-            <ManualSalesDayEntry />
-
-            {/* Recent entries */}
-            {recentSalesDays.length > 0 && (
-              <div className="border-t border-white/7 pt-4">
-                <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Recent entries</div>
-                <div className="space-y-1">
-                  {recentSalesDays.map((sd) => {
-                    const d = new Date(sd.date);
-                    return (
-                      <div key={sd.id} className="flex items-center justify-between py-1.5 px-2 rounded-[4px] hover:bg-white/[0.02]">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[12px] text-slate-300 font-mono w-[100px]">
-                            {d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                          </span>
-                          <span className="text-[12px] font-mono text-white font-semibold">{formatGBP(sd.msSinglesTotal)}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                            sd.source === "SUMUP"
-                              ? "bg-accent/15 text-accent"
-                              : "bg-white/7 text-slate-400"
-                          }`}>
-                            {sd.source}
-                          </span>
-                        </div>
-                        <SalesDayDeleteButton id={sd.id} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* Explainer */}
         <div className="bg-navy-800 border border-white/7 rounded-[10px] p-5 flex gap-6">
           <div className="flex-1">
-            <div className="text-[13px] font-semibold text-white mb-1">Global Accounting Method</div>
+            <div className="text-[13px] font-semibold text-white mb-1">How this is calculated</div>
             <div className="text-[12px] text-slate-400 leading-relaxed">
-              Atlas uses the Global Accounting Method for the UK VAT Margin Scheme. VAT is calculated on the total margin across all eligible goods in the period —
-              not per item. Formula:{" "}
-              <code className="text-white font-mono">VAT = (Total Sales − Total Purchases) × 1/6</code>
+              Every card in ATLAS has a purchase price (what was paid — 70% cash or 80% credit) and a market value (expected sale price).
+              The VAT estimate uses the margin on each card:{" "}
+              <code className="text-white font-mono">VAT = (Market Value − Purchase Price) ÷ 6</code>.
+              Only cards where market value exceeds purchase price are included.
             </div>
           </div>
           <div className="bg-navy-900 rounded-[6px] px-4 py-3.5 min-w-[210px] shrink-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Example Quarter</div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Example</div>
             <div className="text-[12px] text-slate-400 font-mono leading-[1.8]">
-              Sales:     £14,200<br />
-              Purchases:  £8,420<br />
-              Margin:     £5,780<br />
-              VAT = £5,780 ÷ 6 = <span className="text-warning">£963.33</span>
+              Market:    £100<br />
+              Paid (70%): £70<br />
+              Margin:     £30<br />
+              VAT = £30 ÷ 6 = <span className="text-warning">£5.00</span>
             </div>
           </div>
         </div>

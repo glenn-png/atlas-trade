@@ -102,6 +102,11 @@ db.exec(`
     syncedAt         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     createdAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS VatFiling (
+    quarter  TEXT PRIMARY KEY,
+    filedAt  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrate: add new Card columns if they don't exist yet
