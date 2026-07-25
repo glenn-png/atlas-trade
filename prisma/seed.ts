@@ -64,7 +64,7 @@ async function main() {
         salePrice: card.salePrice ?? null,
         status: card.status as "IN_STOCK" | "SOLD",
         channel: (card.channel as "IN_STORE" | "EBAY" | "WEBSITE" | "OTHER") ?? null,
-        paymentType: (card.paymentType as "CASH" | "STORE_CREDIT") ?? null,
+        paymentType: (card.paymentType as "PURCHASE" | "STORE_CREDIT") ?? null,
         soldAt: card.soldAt ?? null,
         acquiredAt: card.soldAt
           ? new Date(card.soldAt.getTime() - 14 * 24 * 60 * 60 * 1000)
