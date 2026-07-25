@@ -26,70 +26,80 @@ export async function GET(req: NextRequest) {
     ...(to ? { lte: new Date(to + "T23:59:59") } : {}),
   };
 
-  const [allCards, allSalesDays] = await Promise.all([
-    prisma.card.findMany({
-      select: { purchasePrice: true, acquiredAt: true },
-      where: Object.keys(dateWhere).length ? { acquiredAt: dateWhere } : undefined,
-    }),
-    prisma.salesDay.findMany({
-      where: Object.keys(dateWhere).length ? { date: dateWhere } : undefined,
-      orderBy: { date: "asc" },
-    }),
-  ]);
+  const cards = await prisma.card.findMany({
+    select: {
+      name: true,
+      set: true,
+      setNumber: true,
+      itemType: true,
+      purchasePrice: true,
+      marketValue: true,
+      paymentType: true,
+      status: true,
+      acquiredAt: true,
+    },
+    where: {
+      marketValue: { not: null },
+      ...(Object.keys(dateWhere).length ? { acquiredAt: dateWhere } : {}),
+    },
+    orderBy: { acquiredAt: "asc" },
+  });
 
-  // Build quarterly totals
-  const quarters: Record<string, { purchases: number; sales: number; year: number; q: number }> = {};
-  for (const card of allCards) {
+  // Build quarterly buckets
+  type QData = { purchases: number; market: number; year: number; q: number };
+  const quarters: Record<string, QData> = {};
+  for (const card of cards) {
+    if (card.marketValue == null) continue;
     const y = card.acquiredAt.getFullYear();
     const q = getQuarter(card.acquiredAt);
     const key = `${y}-${q}`;
-    if (!quarters[key]) quarters[key] = { purchases: 0, sales: 0, year: y, q };
+    if (!quarters[key]) quarters[key] = { purchases: 0, market: 0, year: y, q };
     quarters[key].purchases += card.purchasePrice;
-  }
-  for (const sd of allSalesDays) {
-    const d = new Date(sd.date);
-    const y = d.getFullYear();
-    const q = getQuarter(d);
-    const key = `${y}-${q}`;
-    if (!quarters[key]) quarters[key] = { purchases: 0, sales: 0, year: y, q };
-    quarters[key].sales += sd.msSinglesTotal;
+    quarters[key].market += card.marketValue;
   }
 
   // Sheet 1: Quarterly summary
   const quarterlySummary = Object.entries(quarters)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, d]) => {
-      const margin = d.sales - d.purchases;
+      const margin = d.market - d.purchases;
       const vat = margin > 0 ? margin / 6 : 0;
       return {
         Quarter: quarterLabel(d.year, d.q),
         Period: quarterDates(d.year, d.q),
-        "Total Purchases (£)": +d.purchases.toFixed(2),
-        "Total Sales (£)": +d.sales.toFixed(2),
+        "Cards": cards.filter(c => c.acquiredAt.getFullYear() === d.year && getQuarter(c.acquiredAt) === d.q && c.marketValue != null).length,
+        "Total Paid (£)": +d.purchases.toFixed(2),
+        "Market Value (£)": +d.market.toFixed(2),
         "Margin (£)": +margin.toFixed(2),
-        "VAT Due (£)": +vat.toFixed(2),
+        "Est. VAT (£)": +vat.toFixed(2),
       };
     });
 
-  // Sheet 2: Daily sales log
-  const salesLog = allSalesDays.map((sd) => ({
-    Date: new Date(sd.date).toLocaleDateString("en-GB"),
-    "MS-Singles Total (£)": +sd.msSinglesTotal.toFixed(2),
-    Source: sd.source,
-    "Synced At": new Date(sd.syncedAt).toLocaleDateString("en-GB"),
-  }));
-
-  // Sheet 3: Purchase log
-  const purchaseLog = allCards.map((c) => ({
-    Date: c.acquiredAt.toLocaleDateString("en-GB"),
-    "Purchase Cost (£)": +c.purchasePrice.toFixed(2),
-    Quarter: quarterLabel(c.acquiredAt.getFullYear(), getQuarter(c.acquiredAt)),
-  }));
+  // Sheet 2: Card ledger
+  const cardLedger = cards
+    .filter(c => c.marketValue != null)
+    .map(c => {
+      const margin = c.marketValue! - c.purchasePrice;
+      const vat = margin > 0 ? margin / 6 : 0;
+      return {
+        Card: c.name,
+        Set: c.set,
+        "Set #": c.setNumber ?? "",
+        Type: c.itemType,
+        Acquired: c.acquiredAt.toLocaleDateString("en-GB"),
+        Quarter: quarterLabel(c.acquiredAt.getFullYear(), getQuarter(c.acquiredAt)),
+        Payment: c.paymentType === "CASH" ? "Cash" : c.paymentType === "STORE_CREDIT" ? "Store Credit" : "",
+        Status: c.status,
+        "Buy Price (£)": +c.purchasePrice.toFixed(2),
+        "Market Value (£)": +c.marketValue!.toFixed(2),
+        "Margin (£)": +margin.toFixed(2),
+        "Est. VAT (£)": +vat.toFixed(2),
+      };
+    });
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(quarterlySummary), "VAT Summary");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesLog.length ? salesLog : [{ Note: "No sales data" }]), "Sales Log");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(purchaseLog), "Purchase Log");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cardLedger.length ? cardLedger : [{ Note: "No cards with market values" }]), "Card Ledger");
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   const dateStr = new Date().toISOString().split("T")[0];
