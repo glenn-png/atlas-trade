@@ -125,8 +125,7 @@ export default async function DashboardPage({
     previousTrades,
     currentSalesDays,
     previousSalesDays,
-    quarterSalesDays,
-    quarterPurchases,
+    quarterCards,
     allInStock,
   ] = await Promise.all([
     prisma.trade.findMany({
@@ -140,13 +139,13 @@ export default async function DashboardPage({
     }),
     prisma.salesDay.findMany({ where: { date: { gte: current.from, lte: current.to } } }),
     prisma.salesDay.findMany({ where: { date: { gte: previous.from, lte: previous.to } } }),
-    prisma.salesDay.findMany({ where: { date: { gte: quarterStart } } }),
-    prisma.card.aggregate({ where: { acquiredAt: { gte: quarterStart } }, _sum: { purchasePrice: true } }),
+    prisma.card.findMany({
+      where: { acquiredAt: { gte: quarterStart }, marketValue: { not: null } },
+      select: { purchasePrice: true, marketValue: true },
+    }),
     prisma.card.aggregate({ where: { status: "IN_STOCK" }, _count: true, _sum: { purchasePrice: true, marketValue: true } }),
   ]);
 
-  const currentRevenue = currentSalesDays.reduce((s, d) => s + d.msSinglesTotal, 0);
-  const previousRevenue = previousSalesDays.reduce((s, d) => s + d.msSinglesTotal, 0);
   const currentCost = currentTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
   const currentMarketValue = currentTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + (c.marketValue ?? 0), 0), 0);
   const previousCost = previousTrades.reduce((s, t) => s + t.cards.reduce((cs, c) => cs + c.purchasePrice, 0), 0);
@@ -155,9 +154,9 @@ export default async function DashboardPage({
   const currentCardCount = currentTrades.reduce((s, t) => s + t.cards.length, 0);
   const previousCardCount = previousTrades.reduce((s, t) => s + t.cards.length, 0);
 
-  const quarterSales = quarterSalesDays.reduce((s, d) => s + d.msSinglesTotal, 0);
-  const quarterCost = quarterPurchases._sum.purchasePrice ?? 0;
-  const quarterMargin = quarterSales - quarterCost;
+  const quarterCost = quarterCards.reduce((s, c) => s + c.purchasePrice, 0);
+  const quarterMarket = quarterCards.reduce((s, c) => s + (c.marketValue ?? 0), 0);
+  const quarterMargin = quarterMarket - quarterCost;
   const quarterVAT = quarterMargin > 0 ? quarterMargin / 6 : 0;
 
   const inventoryValue = allInStock._sum.purchasePrice ?? 0;
@@ -167,7 +166,6 @@ export default async function DashboardPage({
   const tradeDelta = delta(currentTradeCount, previousTradeCount);
   const cardDelta = delta(currentCardCount, previousCardCount);
   const costDelta = delta(currentCost, previousCost);
-  const revDelta = delta(currentRevenue, previousRevenue);
 
   // Payment split for current period
   const cashTrades = currentTrades.filter((t) => t.paymentType === "PURCHASE");
@@ -274,7 +272,7 @@ export default async function DashboardPage({
           <div className="flex items-center justify-between mb-3">
             <SectionLabel>{periodLabel} Overview</SectionLabel>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             <StatCard
               label="Trades"
               value={currentTradeCount.toString()}
@@ -320,13 +318,6 @@ export default async function DashboardPage({
                 </div>
               )}
             </div>
-            <StatCard
-              label="MS-Singles Revenue"
-              value={currentRevenue > 0 ? formatGBP(currentRevenue) : "—"}
-              delta={revDelta}
-              sub={currentSalesDays.length > 0 ? `${currentSalesDays.length} day${currentSalesDays.length !== 1 ? "s" : ""} logged` : "No SumUp data"}
-              accent="green"
-            />
           </div>
 
           {/* Payment split bar */}
@@ -358,20 +349,19 @@ export default async function DashboardPage({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section>
             <SectionLabel>{currentQuarter} VAT Estimate</SectionLabel>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <StatCard label="Purchases" value={formatGBP(quarterCost)} sub="from trade-ins" accent="amber" compact />
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <StatCard label="Purchases" value={formatGBP(quarterCost)} sub={`${quarterCards.length} cards`} accent="amber" compact />
               <StatCard
-                label="Sales (MS-Singles)"
-                value={quarterSales > 0 ? formatGBP(quarterSales) : "—"}
-                sub={quarterSalesDays.length > 0 ? `${quarterSalesDays.length} days` : "No SumUp data"}
+                label="Est. Margin"
+                value={quarterMargin > 0 ? formatGBP(quarterMargin) : "—"}
+                sub="market − buy price"
                 accent="green"
                 compact
               />
-              <StatCard label="Margin" value={quarterSales > 0 ? formatGBP(quarterMargin) : "—"} compact />
               <StatCard
-                label="VAT Due"
+                label="Est. VAT"
                 value={quarterVAT > 0 ? formatGBP(quarterVAT) : "£0.00"}
-                sub="margin × 1/6"
+                sub="margin ÷ 6"
                 highlight={quarterVAT > 0}
                 compact
               />
