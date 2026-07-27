@@ -345,45 +345,44 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {/* ── VAT estimate + Inventory snapshot side by side on desktop ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section>
-            <SectionLabel>{currentQuarter} VAT Estimate</SectionLabel>
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              <StatCard label="Purchases" value={formatGBP(quarterCost)} sub={`${quarterCards.length} cards`} accent="amber" compact />
-              <StatCard
-                label="Est. Margin"
-                value={quarterMargin > 0 ? formatGBP(quarterMargin) : "—"}
-                sub="market − buy price"
-                accent="green"
-                compact
-              />
-              <StatCard
-                label="Est. VAT"
-                value={quarterVAT > 0 ? formatGBP(quarterVAT) : "£0.00"}
-                sub="margin ÷ 6"
-                highlight={quarterVAT > 0}
-                compact
-              />
-            </div>
-          </section>
+        {/* ── Inventory snapshot ── */}
+        <section>
+          <SectionLabel>Inventory Snapshot</SectionLabel>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Cards In Stock" value={allInStock._count.toString()} compact />
+            <StatCard label="Cost Value" value={formatGBP(inventoryValue)} sub="at purchase price" accent="amber" compact />
+            <StatCard label="Market Value" value={formatGBP(marketValue)} sub="current market" accent="green" compact />
+            <StatCard
+              label="Unrealised Gain"
+              value={formatGBP(marketValue - inventoryValue)}
+              sub="vs purchase cost"
+              accent={marketValue >= inventoryValue ? "green" : "red"}
+              compact
+            />
+          </div>
+        </section>
 
-          <section>
-            <SectionLabel>Inventory Snapshot</SectionLabel>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <StatCard label="Cards In Stock" value={allInStock._count.toString()} compact />
-              <StatCard label="Cost Value" value={formatGBP(inventoryValue)} sub="at purchase price" accent="amber" compact />
-              <StatCard label="Market Value" value={formatGBP(marketValue)} sub="current market" accent="green" compact />
-              <StatCard
-                label="Unrealised Gain"
-                value={formatGBP(marketValue - inventoryValue)}
-                sub="vs purchase cost"
-                accent={marketValue >= inventoryValue ? "green" : "red"}
-                compact
-              />
-            </div>
-          </section>
-        </div>
+        {/* ── VAT estimate ── */}
+        <section>
+          <SectionLabel>{currentQuarter} VAT Estimate</SectionLabel>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <StatCard label="Purchases" value={formatGBP(quarterCost)} sub={`${quarterCards.length} cards`} accent="amber" compact />
+            <StatCard
+              label="Est. Margin"
+              value={quarterMargin > 0 ? formatGBP(quarterMargin) : "—"}
+              sub="market − buy price"
+              accent="green"
+              compact
+            />
+            <StatCard
+              label="Est. VAT"
+              value={quarterVAT > 0 ? formatGBP(quarterVAT) : "£0.00"}
+              sub="margin ÷ 6"
+              highlight={quarterVAT > 0}
+              compact
+            />
+          </div>
+        </section>
 
         {/* ── Trade list ── */}
         <section>
