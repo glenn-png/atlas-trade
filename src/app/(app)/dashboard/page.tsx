@@ -177,6 +177,28 @@ export default async function DashboardPage({
   const splitTotal = cashCost + creditCost;
   const cashPct = splitTotal > 0 ? (cashCost / splitTotal) * 100 : 50;
 
+  // Daily trade log (last 90 days, all trades)
+  const since90 = new Date(now);
+  since90.setDate(since90.getDate() - 90);
+  const allRecentTrades = await prisma.trade.findMany({
+    where: { createdAt: { gte: since90 } },
+    select: { paymentType: true, createdAt: true, cards: { select: { purchasePrice: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  type DayData = { trades: number; purchase: number; credit: number };
+  const byDay: Record<string, DayData> = {};
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  for (const t of allRecentTrades) {
+    const d = t.createdAt;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (!byDay[key]) byDay[key] = { trades: 0, purchase: 0, credit: 0 };
+    const total = t.cards.reduce((s, c) => s + c.purchasePrice, 0);
+    byDay[key].trades++;
+    if (t.paymentType === "PURCHASE") byDay[key].purchase += total;
+    else byDay[key].credit += total;
+  }
+  const dailyRows = Object.entries(byDay).sort(([a], [b]) => b.localeCompare(a));
+
   // Activity bars
   const bars = computeBars(currentTrades, period, current.from);
 
@@ -478,6 +500,57 @@ export default async function DashboardPage({
               </div>
             </>
           )}
+        </section>
+
+        {/* Daily trade log */}
+        <section className="space-y-3">
+          <SectionLabel>Daily Trade Log — Last 90 Days</SectionLabel>
+          <div className="bg-navy-800 border border-white/7 rounded-[10px] overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="bg-navy-900">
+                  {["Day", "Date", "Trades", "Purchase", "Credit", "Total"].map((h) => (
+                    <th key={h} className="text-left px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-slate-400 border-b border-white/7 whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dailyRows.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No trades in the last 90 days.</td></tr>
+                ) : dailyRows.map(([dateKey, data]) => {
+                  const d = new Date(dateKey + "T00:00:00");
+                  const total = data.purchase + data.credit;
+                  const dateDisplay = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+                  return (
+                    <tr key={dateKey} className="border-b border-white/7 last:border-0 hover:bg-white/2 transition-colors">
+                      <td className="px-3.5 py-2.5 text-slate-400 text-[12px]">{DAY_NAMES[d.getDay()]}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-[12px] text-white">{dateDisplay}</td>
+                      <td className="px-3.5 py-2.5 text-slate-300">{data.trades}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-warning">{data.purchase > 0 ? formatGBP(data.purchase) : <span className="text-slate-600">—</span>}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-accent">{data.credit > 0 ? formatGBP(data.credit) : <span className="text-slate-600">—</span>}</td>
+                      <td className="px-3.5 py-2.5 font-mono font-semibold text-white">{formatGBP(total)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {dailyRows.length > 0 && (() => {
+                const totPurchase = dailyRows.reduce((s, [, d]) => s + d.purchase, 0);
+                const totCredit = dailyRows.reduce((s, [, d]) => s + d.credit, 0);
+                return (
+                  <tfoot>
+                    <tr className="bg-navy-900 border-t border-white/12">
+                      <td colSpan={3} className="px-3.5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">90-day totals</td>
+                      <td className="px-3.5 py-3 font-mono font-bold text-warning">{formatGBP(totPurchase)}</td>
+                      <td className="px-3.5 py-3 font-mono font-bold text-accent">{formatGBP(totCredit)}</td>
+                      <td className="px-3.5 py-3 font-mono font-bold text-white">{formatGBP(totPurchase + totCredit)}</td>
+                    </tr>
+                  </tfoot>
+                );
+              })()}
+            </table>
+          </div>
         </section>
 
       </div>
