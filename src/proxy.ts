@@ -2,7 +2,7 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const STAFF_ALLOWED = ["/dashboard", "/trade-in", "/trades"];
+const STAFF_ALLOWED = ["/dashboard", "/trade-in", "/trades", "/inventory"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,9 +25,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Staff role — only allow dashboard, trade-in, and trade detail pages
+  // Staff can use the operational pages, while finance and admin stay restricted.
   if (token && token.role === "STAFF") {
-    const allowed = STAFF_ALLOWED.some((path) => pathname.startsWith(path));
+    const allowed = STAFF_ALLOWED.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`)
+    );
     if (!allowed) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
